@@ -1,9 +1,9 @@
-using Apps.Appname.Api;
+using Apps.Strapi.Api;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
 
-namespace Apps.Appname;
+namespace Apps.Strapi;
 
 public class Invocable : BaseInvocable
 {

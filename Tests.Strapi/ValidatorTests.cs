@@ -1,8 +1,8 @@
-using Apps.Appname.Connections;
+using Apps.Strapi.Connections;
 using Blackbird.Applications.Sdk.Common.Authentication;
-using Tests.Appname.Base;
+using Tests.Strapi.Base;
 
-namespace Tests.Appname;
+namespace Tests.Strapi;
 
 [TestClass]
 public class ConnectionValidatorTests : TestBase

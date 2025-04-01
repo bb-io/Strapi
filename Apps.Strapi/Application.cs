@@ -1,7 +1,7 @@
-﻿using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Metadata;
 
-namespace Apps.Appname;
+namespace Apps.Strapi;
 
 public class Application : IApplication, ICategoryProvider
 {

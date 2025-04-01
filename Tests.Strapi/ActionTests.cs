@@ -1,7 +1,7 @@
-﻿using Apps.Appname.Actions;
-using Tests.Appname.Base;
+using Apps.Strapi.Actions;
+using Tests.Strapi.Base;
 
-namespace Tests.Appname;
+namespace Tests.Strapi;
 
 [TestClass]
 public class ActionTests : TestBase
