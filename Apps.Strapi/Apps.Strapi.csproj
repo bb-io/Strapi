@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -11,12 +11,20 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="image\**" />
+      <EmbeddedResource Remove="image\**" />
+      <None Remove="image\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.11.0" />
         <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.25" />
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png" />
+      <Folder Include="Models\Dtos\" />
+      <Folder Include="Models\Identifiers\" />
+      <Folder Include="Models\Responses\" />
     </ItemGroup>
 
 </Project>

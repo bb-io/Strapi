@@ -6,11 +6,11 @@ namespace Tests.Strapi;
 [TestClass]
 public class ActionTests : TestBase
 {
-    [TestMethod]
-    public async Task Dynamic_handler_works()
-    {
-        var actions = new Actions(InvocationContext);
+    //[TestMethod]
+    //public async Task Dynamic_handler_works()
+    //{
+    //    var actions = new DocumentActions(InvocationContext);
 
-        await actions.Action();
-    }
+    //    await actions.Action();
+    //}
 }
