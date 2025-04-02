@@ -13,7 +13,7 @@ public class ConnectionValidator: IConnectionValidator
     {
         try
         {
-            var client = new Client(authenticationCredentialsProviders);
+            var client = new ApiClient(authenticationCredentialsProviders);
 
             await client.ExecuteWithErrorHandling(new RestRequest());
 
