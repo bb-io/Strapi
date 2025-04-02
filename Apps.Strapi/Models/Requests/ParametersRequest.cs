@@ -10,9 +10,9 @@ namespace Apps.Strapi.Models.Requests
         [Display("Filters")]
         public string? Filters { get; set; }
 
-        [Display("Locale")]
-        public string? Locale { get; set; } //TODO: Add json data source? https://github.com/strapi/strapi/blob/main/packages/plugins/i18n/server/src/constants/iso-locales.json
-
+        [Display("Locale"),DataSource(typeof(LanguageDataHandler))]
+        public string? Locale { get; set; } 
+        
         [Display("Status"),DataSource(typeof(StatusDataHandler))]
         public string? Status { get; set; }
 
