@@ -10,7 +10,7 @@ public class Invocable : BaseInvocable
     protected AuthenticationCredentialsProvider[] Creds =>
         InvocationContext.AuthenticationCredentialsProviders.ToArray();
 
-    protected ApiClient Client { get; }
+    protected StrapiClient Client { get; }
     public Invocable(InvocationContext invocationContext) : base(invocationContext)
     {
         Client = new(Creds);

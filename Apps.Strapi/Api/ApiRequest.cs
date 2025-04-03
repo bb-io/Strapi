@@ -6,7 +6,7 @@ using RestSharp;
 
 namespace Apps.Strapi.Api;
 
-public class ApiRequest(string resource, Method method, IEnumerable<AuthenticationCredentialsProvider> creds)
+public class ApiRequest(string? resource, Method method, IEnumerable<AuthenticationCredentialsProvider> creds)
     : BlackBirdRestRequest(resource, method, creds)
 {
     protected override void AddAuth(IEnumerable<AuthenticationCredentialsProvider> creds)

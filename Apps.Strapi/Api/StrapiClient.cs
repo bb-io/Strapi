@@ -6,7 +6,7 @@ using RestSharp;
 
 namespace Apps.Strapi.Api;
 
-public class ApiClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
+public class StrapiClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
     : BlackBirdRestClient(new()
     {
         BaseUrl = new(authenticationCredentialsProviders.Get(CredsNames.Url).Value),

@@ -13,7 +13,7 @@ public class ConnectionValidator: IConnectionValidator
     {
         try
         {
-            var client = new ApiClient(authenticationCredentialsProviders);
+            var client = new StrapiClient(authenticationCredentialsProviders);
 
             await client.ExecuteWithErrorHandling(new RestRequest());
 
