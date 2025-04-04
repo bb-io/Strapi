@@ -18,7 +18,16 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
     {
         var client = new StrapiClient(Creds);
 
-        var result = await client.GetAsync<DocumentsResponse>(new ApiRequest(string.Empty,Method.Get, Creds));
+        string query = string.Empty;
+        if (request.Id!=null)
+        {
+            query = $"/{request.ApiId}/{request.Id}";
+        }
+        else
+        {
+            query = $"/{request.ApiId}";
+        }
+        var result = await client.GetAsync<DocumentsResponse>(new ApiRequest(string.Empty, Method.Get, Creds));
 
         if (result == null)
         {
@@ -27,6 +36,19 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         throw new Exception();
     }
 
+    [Action("Get Document", Description = "Gets a document.")] //TODO: fill description
+    public async Task<DocumentsResponse> GetDocument(GetDocumentRequest request)
+    {
+        var client = new StrapiClient(Creds);
+
+        var result = await client.GetAsync<DocumentsResponse>(new ApiRequest($"/:{request.Id}", Method.Get, Creds));
+
+        if (result == null)
+        {
+            throw new PluginApplicationException();
+        }
+        throw new Exception();
+    }
     [Action("Create Document", Description = "Creates a new document")]//TODO: fill description
     public async Task<DocumentResponse> CreateDocument(CreateDocumentRequest request)
     {

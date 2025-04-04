@@ -9,7 +9,7 @@ namespace Apps.Strapi.Api;
 public class StrapiClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
     : BlackBirdRestClient(new()
     {
-        BaseUrl = new(authenticationCredentialsProviders.Get(CredsNames.Url).Value),
+        BaseUrl = new(authenticationCredentialsProviders.Get(CredsNames.Url).Value.Trim('/')),
         ThrowOnAnyError = false
     })
 {
