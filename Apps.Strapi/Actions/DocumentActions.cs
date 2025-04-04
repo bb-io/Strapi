@@ -16,8 +16,6 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
     [Action("Get Documents", Description = "Gets a list of document.")] //TODO: fill description
     public async Task<DocumentsResponse> GetDocuments(GetDocumentRequest request)
     {
-        var client = new StrapiClient(Creds);
-
         string query = string.Empty;
         if (request.Id!=null)
         {
@@ -27,7 +25,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         {
             query = $"/{request.ApiId}";
         }
-        var result = await client.GetAsync<DocumentsResponse>(new ApiRequest(string.Empty, Method.Get, Creds));
+        var result = await Client.GetAsync<DocumentsResponse>(new ApiRequest(string.Empty, Method.Get, Creds));
 
         if (result == null)
         {
@@ -39,9 +37,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
     [Action("Get Document", Description = "Gets a document.")] //TODO: fill description
     public async Task<DocumentsResponse> GetDocument(GetDocumentRequest request)
     {
-        var client = new StrapiClient(Creds);
-
-        var result = await client.GetAsync<DocumentsResponse>(new ApiRequest($"/:{request.Id}", Method.Get, Creds));
+        var result = await Client.GetAsync<DocumentsResponse>(new ApiRequest($"/:{request.Id}", Method.Get, Creds));
 
         if (result == null)
         {
