@@ -1,20 +1,30 @@
 using Apps.Strapi.Constants;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 using Blackbird.Applications.Sdk.Utils.RestSharp;
+using Newtonsoft.Json;
 using RestSharp;
 
 namespace Apps.Strapi.Api;
 
-public class StrapiClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
-    : BlackBirdRestClient(new()
+public class StrapiClient : BlackBirdRestClient
+{
+    public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> creds) : base(new()
     {
-        BaseUrl = new(authenticationCredentialsProviders.Get(CredsNames.Url).Value.Trim('/')),
+        BaseUrl = new(creds.Get(CredsNames.Url).Value.Trim('/')),
         ThrowOnAnyError = false
     })
-{
+    {
+        var apiToken = creds.Get(CredsNames.ApiToken).Value;
+        this.AddDefaultHeader("Authorization", $"Bearer {apiToken}");
+    }
+
     protected override Exception ConfigureErrorException(RestResponse response)
     {
-        throw new Exception(response.Content!);
+        var error = JsonConvert.DeserializeObject(response.Content);
+        var errorMessage = "";
+
+        throw new PluginApplicationException(errorMessage);
     }
 }
