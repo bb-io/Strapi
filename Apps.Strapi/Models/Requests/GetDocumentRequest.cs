@@ -5,6 +5,6 @@ namespace Models.Requests
     public class GetDocumentRequest : BaseDocumentRequest
     {
         [Display("Id", Description ="Description")]
-        public int Id { get; set; }
+        public int? Id { get; set; }
     }
 }
