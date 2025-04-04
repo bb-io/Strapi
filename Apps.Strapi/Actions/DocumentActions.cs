@@ -16,6 +16,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
     [Action("Get Documents", Description = "Gets a list of document.")] //TODO: fill description
     public async Task<DocumentsResponse> GetDocuments(GetDocumentRequest request)
     {
+
         string query = string.Empty;
         if (request.Id!=null)
         {
