@@ -20,7 +20,7 @@ namespace Tests.Strapi
 
             await documentAction.GetDocuments(new GetDocumentRequest
             {
-                Id = 1
+                ApiId = "about"
             });
         }
 

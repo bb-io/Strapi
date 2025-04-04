@@ -27,13 +27,16 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         {
             query = $"/{request.ApiId}";
         }
-        var result = await Client.GetAsync<DocumentsResponse>(new RestRequest(string.Empty, Method.Get));
+        var result = await Client.GetAsync<DocumentsResponse>(new RestRequest(query, Method.Get));
 
         if (result == null)
         {
             throw new PluginApplicationException();
         }
-        throw new Exception();
+        return new()
+        {
+            Data = result.Data
+        };
     }
 
     [Action("Get Document", Description = "Gets a document.")] //TODO: fill description
