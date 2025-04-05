@@ -1,5 +1,5 @@
 ﻿using Apps.Strapi.Actions;
-using Models.Requests;
+using Apps.Strapi.Models.Requests.Documents;
 using Tests.Strapi.Base;
 
 namespace Tests.Strapi
@@ -18,7 +18,7 @@ namespace Tests.Strapi
         {
             var documentAction = new DocumentActions(InvocationContext);
 
-            await documentAction.GetDocuments(new GetDocumentRequest
+            await documentAction.GetDocuments(new GetDocumentsRequest
             {
                 ApiId = "about"
             });

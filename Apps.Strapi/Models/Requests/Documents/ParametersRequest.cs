@@ -3,7 +3,7 @@ using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common;
 
 
-namespace Apps.Strapi.Models.Requests
+namespace Apps.Strapi.Models.Requests.Documents
 {
     public class ParametersRequest
     {
