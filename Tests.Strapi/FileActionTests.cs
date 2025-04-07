@@ -14,6 +14,7 @@ namespace Tests.Strapi
 
             var files = await fileAction.GetFiles();
 
+            Assert.IsNotNull(files); // TODO: maybe check for type
         }
 
         [TestMethod]
@@ -22,6 +23,8 @@ namespace Tests.Strapi
             var fileAction = new FileActions(InvocationContext);
 
             var file = await fileAction.GetFile(new GetFileRequest() { Id = 1});
+
+            Assert.IsNotNull(file); // TODO: maybe check for type
         }
 
         [TestMethod]
@@ -29,7 +32,9 @@ namespace Tests.Strapi
         {
             var fileAction = new FileActions(InvocationContext);
 
-            await fileAction.UploadFiles(new UploadFilesRequest());
+            await fileAction.UploadFiles(new UploadFilesRequest()); //TODO create actual file upload request
+
+            Assert.Fail(); //TODO fix test
         }
 
         [TestMethod]
@@ -37,7 +42,9 @@ namespace Tests.Strapi
         {
             var fileAction = new FileActions(InvocationContext);
 
-            await fileAction.UploadFileInfo(new UploadFileInfoRequest());
+            await fileAction.UploadFileInfo(new UploadFileInfoRequest()); //TODO create actual file info upload request
+            
+            Assert.Fail(); //TODO fix test
         }
 
         [TestMethod]
@@ -46,6 +53,8 @@ namespace Tests.Strapi
             var fileAction = new FileActions(InvocationContext);
 
             await fileAction.DeleteFile(new DeleteFileRequest() { Id = 1 });
+
+            Assert.Fail(); //TODO fix test
         }
     }
 }

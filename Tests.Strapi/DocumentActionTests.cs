@@ -13,10 +13,12 @@ namespace Tests.Strapi
         {
             var documentAction = new DocumentActions(InvocationContext);
 
-            await documentAction.GetDocuments(new GetDocumentsRequest
+            var result = await documentAction.GetDocuments(new GetDocumentsRequest
             {
                 ApiId = "about"
             });
+
+            Assert.IsNotNull(result); // TODO: maybe check for type
         }
 
         [TestMethod]
@@ -24,10 +26,12 @@ namespace Tests.Strapi
         {
             var documentAction = new DocumentActions(InvocationContext);
 
-            await documentAction.GetDocument(new GetDocumentRequest
+            var result =  await documentAction.GetDocument(new GetDocumentRequest
             {
                 ApiId = "about"
             });
+
+            Assert.IsNotNull(result);
         }
 
         [TestMethod]
@@ -39,6 +43,8 @@ namespace Tests.Strapi
             {
                 ApiId = "about"
             });
+
+            Assert.Fail(); //TODO fix test
         }
 
         [TestMethod]
@@ -51,6 +57,8 @@ namespace Tests.Strapi
                 ApiId = "about",
                 Id=1
             });
+
+            Assert.Fail(); //TODO fix test
         }
 
         [TestMethod]
@@ -60,9 +68,10 @@ namespace Tests.Strapi
 
             await documentAction.DeleteDocument(new DeleteDocumentRequest
             {
-                ApiId = "about",
-                Id = 1
+                ApiId = "about"
             });
+
+            Assert.Fail(); //TODO fix test
         }
     }
 }
