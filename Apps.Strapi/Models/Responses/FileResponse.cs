@@ -1,50 +1,64 @@
-﻿using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Apps.Strapi.Models.Responses
 {
     public class FileResponse
     {
-        [JsonPropertyName("id")]
+        [JsonProperty("id")]
         int Id { get; set; }
 
-        [JsonPropertyName("documentId")]
+        [JsonProperty("documentId")]
         string DocumentId { get; set; }
 
-        [JsonPropertyName("name")]
+        [JsonProperty("name")]
         string Name { get; set; }
 
-        //string? AlternativeText { get; set; }
+        [JsonProperty("alternativeText")]
+        string? AlternativeText { get; set; }
 
-        //string? Caption { get; set; }
+        [JsonProperty("caption")]
+        string? Caption { get; set; }
 
-        //string? Width { get; set; }
+        [JsonProperty("width")]
+        string? Width { get; set; }
 
-        //string? Height { get; set; }
+        [JsonProperty("height")]
+        string? Height { get; set; }
+        [JsonProperty("formats")]
+        string? Formats { get; set; }
+        [JsonProperty("hash")]
+        string? Hash { get; set; }
 
-        //string? Formats { get; set; }
+        [JsonProperty("ext")]
+        string? Ext { get; set; }
 
-        //string? hash { get; set; }
+        [JsonProperty("mime")]
+        string? Mime { get; set; }
 
-        //string? ext { get; set; }
+        [JsonProperty("size")]
+        float? Size { get; set; }
 
-        //string? mime { get; set; }
+        [JsonProperty("url")]
+        string? Url { get; set; }
 
-        //float? size { get; set; }
+        [JsonProperty("previewUrl")]
+        string? PreviewUrl { get; set; }
 
-        //string? url { get; set; }
+        [JsonProperty("provider")]
+        string? Provider { get; set; }
 
-        //string? previewUrl { get; set; }
+        [JsonProperty("provider_metadata")]
+        string? ProviderMetadata { get; set; }
 
-        //string? provider { get; set; }
+        [JsonProperty("createdAt")]
+        DateTime? CreatedAt { get; set; }
 
+        [JsonProperty("updatedAt")]
+        DateTime? UpdatedAt { get; set; }
 
-        //string? provider_metadata { get; set; }
-
-        //DateTime? createdAt { get; set; }
-
-        //DateTime? updatedAt { get; set; }
-
-        //string? publishedAt { get; set; }
+        [JsonProperty("publishedAt")]
+        string? PublishedAt { get; set; }
 
     }
 }
