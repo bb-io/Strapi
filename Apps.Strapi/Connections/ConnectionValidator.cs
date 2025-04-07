@@ -11,26 +11,36 @@ public class ConnectionValidator: IConnectionValidator
         IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         CancellationToken cancellationToken)
     {
-        //try
-        //{
-        //    var client = new StrapiClient(authenticationCredentialsProviders);
+        try
+        {
+            var client = new StrapiClient(authenticationCredentialsProviders);
 
-        //    await client.ExecuteWithErrorHandling(new RestRequest());
+            var result = await client.ExecuteWithErrorHandling(new RestRequest());
 
-        //    return new()
-        //    {
-        //        IsValid = true
-        //    };
-        //} catch(Exception ex)
-        //{
-        //    return new()
-        //    {
-        //        IsValid = false,
-        //        Message = ex.Message
-        //    };
-        //}
-        return new()
-        { IsValid = true };
+            if (result.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return new()
+                {
+                    IsValid = true
+                };
+            }
+            else
+            {
+                return new()
+                {
+                    IsValid = false,
+                    Message = result.Content
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new()
+            {
+                IsValid = false,
+                Message = ex.Message
+            };
+        }
 
     }
 }
