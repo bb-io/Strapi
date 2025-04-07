@@ -42,9 +42,9 @@ namespace Apps.Strapi.Models.Requests.Documents
 
         public string? Sort { get; set; } //TODO: Don't forget ascending, descending
 
+        //TODO: these do not belong here, more in a separate request
 
-
-        #region Pagination //TODO: these do not belong here, more in a separate request
+        #region Pagination 
 
 
         [Display("Page")]
