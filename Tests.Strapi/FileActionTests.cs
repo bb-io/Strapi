@@ -1,4 +1,6 @@
-﻿using Tests.Strapi.Base;
+﻿using Apps.Strapi.Actions;
+using Tests.Strapi.Base;
+using Apps.Strapi.Models.Requests.Files;
 
 namespace Tests.Strapi
 {
@@ -8,31 +10,42 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task GetFiles_ShouldReturnFiles()
         {
-            Assert.Fail();
+            var fileAction = new FileActions(InvocationContext);
+
+            var files = await fileAction.GetFiles();
+
         }
 
         [TestMethod]
         public async Task GetFile_ShouldReturnFile()
         {
-            Assert.Fail();
+            var fileAction = new FileActions(InvocationContext);
+
+            var file = await fileAction.GetFile(new GetFileRequest() { Id = 1});
         }
 
         [TestMethod]
         public async Task UploadFile_ShouldUploadFile()
         {
-            Assert.Fail();
+            var fileAction = new FileActions(InvocationContext);
+
+            await fileAction.UploadFiles(new UploadFilesRequest());
         }
 
         [TestMethod]
         public async Task UploadFileInfo_ShouldUploadFileInfo()
         {
-            Assert.Fail();
+            var fileAction = new FileActions(InvocationContext);
+
+            await fileAction.UploadFileInfo(new UploadFileInfoRequest());
         }
 
         [TestMethod]
         public async Task DeleteFile_ShouldDeleteFile()
         {
-            Assert.Fail();
+            var fileAction = new FileActions(InvocationContext);
+
+            await fileAction.DeleteFile(new DeleteFileRequest() { Id = 1 });
         }
     }
 }

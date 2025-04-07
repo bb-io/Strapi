@@ -15,7 +15,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
     [Action("Get Documents", Description = "Gets a list of document.")] //TODO: fill description  // TODO: create filters
     public async Task<DocumentsResponse> GetDocuments([ActionParameter]GetDocumentsRequest request)
     {
-        var result = await Client.GetAsync<DocumentsResponse>(new RestRequest($"/{request.ApiId}", Method.Get));
+        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest($"/api/{request.ApiId}", Method.Get));
 
         if (result == null)
         {
@@ -33,33 +33,36 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         string query = string.Empty;
         if (request.Id != null)
         {
-            query = $"/{request.ApiId}/{request.Id}";
+            query = $"/api/{request.ApiId}/{request.Id}";
         }
         else
         {
-            query = $"/{request.ApiId}";
+            query = $"/api/{request.ApiId}";
         }
-        var result = await Client.GetAsync<DocumentsResponse>(new RestRequest(query, Method.Get));
+        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest(query, Method.Get));
 
         if (result == null)
         {
             throw new PluginApplicationException();
         }
-        throw new Exception();
+        return result;
     }
     [Action("Create Document", Description = "Creates a new document")]//TODO: fill description
     public async Task<DocumentResponse> CreateDocument([ActionParameter] CreateDocumentRequest request)
     {
         string query = string.Empty;
+        Method method;
         if (request.Id != null)
         {
             query = $"/{request.ApiId}/{request.Id}";
+            method = Method.Post;
         }
         else
         {
-            query = $"/{request.ApiId}"; // TODO: this needs to be a put
+            query = $"/{request.ApiId}";
+            method = Method.Put;
         }
-        var result = await Client.GetAsync<DocumentsResponse>(new RestRequest(query, Method.Post));
+        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest(query, method));
 
         if (result == null)
         {
@@ -91,7 +94,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         {
             query = $"/{request.ApiId}";
         }
-        var result = await Client.GetAsync<DocumentsResponse>(new RestRequest(query, Method.Put));
+        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest(query, Method.Put));
 
         if (result == null)
         {
@@ -123,7 +126,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         {
             query = $"/{request.ApiId}";
         }
-        var result = await Client.GetAsync<DocumentsResponse>(new RestRequest(query, Method.Delete));
+        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest(query, Method.Delete));
 
         if (result == null)
         {

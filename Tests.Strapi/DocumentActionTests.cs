@@ -7,12 +7,7 @@ namespace Tests.Strapi
     [TestClass]
     public class DocumentActionTests : TestBase
     {
-        [TestInitialize]
-        public void Initialize()
-        {
-            // Initialize any required services or dependencies here
-            // For example, you might want to set up a mock Strapi client
-        }
+
         [TestMethod]
         public async Task GetDocuments_ShouldReturnDocuments()
         {
@@ -25,21 +20,49 @@ namespace Tests.Strapi
         }
 
         [TestMethod]
+        public async Task GetDocument_ShouldReturnDocument()
+        {
+            var documentAction = new DocumentActions(InvocationContext);
+
+            await documentAction.GetDocument(new GetDocumentRequest
+            {
+                ApiId = "about"
+            });
+        }
+
+        [TestMethod]
         public async Task CreateDocument_ShouldCreateDocument()
         {
-            Assert.Fail();
+            var documentAction = new DocumentActions(InvocationContext);
+
+            await documentAction.CreateDocument(new CreateDocumentRequest
+            {
+                ApiId = "about"
+            });
         }
 
         [TestMethod]
         public async Task UpdateDocument_ShouldUpdateDocument()
         {
-            Assert.Fail();
+            var documentAction = new DocumentActions(InvocationContext);
+
+            await documentAction.UpdateDocument(new UpdateDocumentRequest
+            {
+                ApiId = "about",
+                Id=1
+            });
         }
 
         [TestMethod]
         public async Task DeleteDocument_ShouldDeleteDocument()
         {
-            Assert.Fail();
+            var documentAction = new DocumentActions(InvocationContext);
+
+            await documentAction.DeleteDocument(new DeleteDocumentRequest
+            {
+                ApiId = "about",
+                Id = 1
+            });
         }
     }
 }

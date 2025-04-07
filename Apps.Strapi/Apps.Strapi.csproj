@@ -24,7 +24,6 @@
     <ItemGroup>
       <Folder Include="Models\Dtos\" />
       <Folder Include="Models\Identifiers\" />
-      <Folder Include="Models\Responses\" />
     </ItemGroup>
 
 </Project>
