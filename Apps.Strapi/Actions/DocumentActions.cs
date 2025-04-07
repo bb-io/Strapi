@@ -4,6 +4,7 @@ using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Microsoft.AspNetCore.WebUtilities;
 using Models.Responses;
 using RestSharp;
 
@@ -12,7 +13,7 @@ namespace Apps.Strapi.Actions;
 [ActionList]
 public class DocumentActions(InvocationContext invocationContext) : Invocable(invocationContext)
 {
-    [Action("Get Documents", Description = "Gets a list of document.")] //TODO: fill description  // TODO: create filters
+    [Action("Get Documents", Description = "Returns documents matching the query filters")] // TODO: create filters
     public async Task<DocumentsResponse> GetDocuments([ActionParameter]GetDocumentsRequest request)
     {
         var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest($"/api/{request.ApiId}", Method.Get));
@@ -27,7 +28,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         };
     }
 
-    [Action("Get Document", Description = "Gets a document.")] //TODO: fill description
+    [Action("Get Document", Description = "Returns a document by documentId.")]
     public async Task<DocumentsResponse> GetDocument([ActionParameter] GetDocumentRequest request) // TODO: create filters
     {
         string query = string.Empty;
@@ -47,7 +48,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         }
         return result;
     }
-    [Action("Create Document", Description = "Creates a new document")]//TODO: fill description
+    [Action("Create Document", Description = "Creates a document and returns its value.")]
     public async Task<DocumentResponse> CreateDocument([ActionParameter] CreateDocumentRequest request)
     {
         string query = string.Empty;
@@ -62,7 +63,10 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
             query = $"/{request.ApiId}";
             method = Method.Put;
         }
-        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest(query, method));
+        var restRequest = new RestRequest(query, method);
+        restRequest.RootElement = "data";
+
+        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(restRequest);
 
         if (result == null)
         {
@@ -82,7 +86,7 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         };
     }
 
-    [Action("Update Document", Description = "Updates an existing document")]
+    [Action("Update Document", Description = "Partially updates a document by id and returns its value.")]
     public async Task<DocumentResponse> UpdateDocument([ActionParameter] UpdateDocumentRequest request) // TODO: create filters
     {
         string query = string.Empty;
@@ -114,19 +118,19 @@ public class DocumentActions(InvocationContext invocationContext) : Invocable(in
         };
     }
 
-    [Action("Delete Document", Description = "Deletes a document")]
+    [Action("Delete Document", Description = "Deletes a document.")]
     public async Task DeleteDocument([ActionParameter] DeleteDocumentRequest request)
     {
         string query = string.Empty;
         if (request.Id != null)
         {
-            query = $"/{request.ApiId}/{request.Id}";
+            query = $"/api/{request.ApiId}/{request.Id}";
         }
         else
         {
-            query = $"/{request.ApiId}";
+            query = $"/api/{request.ApiId}";
         }
-        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest(query, Method.Delete));
+        var result = await Client.ExecuteWithErrorHandling(new RestRequest(query, Method.Delete));
 
         if (result == null)
         {
