@@ -1,8 +1,9 @@
-﻿using Blackbird.Applications.Sdk.Common;
+﻿using Apps.Strapi.Models.Identifiers;
+using Blackbird.Applications.Sdk.Common;
 
 namespace Apps.Strapi.Models.Requests.Documents
 {
-    public class GetDocumentRequest : BaseDocumentRequest
+    public class GetDocumentRequest : ApiIdentifier
     {
         [Display("Id", Description = "Description")]
         public int? Id { get; set; }

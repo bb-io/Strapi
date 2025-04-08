@@ -2,14 +2,16 @@ using Apps.Strapi.Models.Requests.Files;
 using Apps.Strapi.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using RestSharp;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 
 namespace Apps.Strapi.Actions;
 
 [ActionList]
-public class FileActions(InvocationContext invocationContext) : Invocable(invocationContext)
+public class FileActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : Invocable(invocationContext, fileManagementClient)
 {
     [Action("Get a list of files", Description = "Get a list of files")]
     public async Task<IEnumerable<FileResponse>> GetFiles()
@@ -27,18 +29,59 @@ public class FileActions(InvocationContext invocationContext) : Invocable(invoca
         return result;
     }
 
-    //TODO: create separete upload entry files???
     [Action("Upload files", Description = "Upload one or more files to your application.")]
-    public async Task UploadFiles([ActionParameter] UploadFilesRequest uploadFilesRequest) //TODO: fill upload body with request parameters
+    public async Task UploadFiles([ActionParameter] UploadFilesRequest uploadFilesRequest)
     {
-        var result = await Client.ExecuteWithErrorHandling(new RestRequest($"/api/upload/", Method.Post));
+        var request = new RestRequest($"/api/upload/", Method.Post);
+
+        foreach (var item in uploadFilesRequest.Files)
+        {
+            var file = await FileManagementClient.DownloadAsync(item);
+            request.AddFile(item.Name, () => { return file; }, item.Name);
+        }
+
+        var result = await Client.ExecuteWithErrorHandling(request);
     }
 
-    [Action("Upload file info", Description = "Update a file in your application.")]
-    public async Task UploadFileInfo([ActionParameter] UploadFileInfoRequest uploadFileInfoRequest)
+    [Action("Upload files entry", Description = "Upload one or more files that will be linked to a specific entry.")]
+    public async Task UploadFiles([ActionParameter] UploadFileEntryRequest uploadFilesEntryRequest)
     {
-        //TODO: send file info in body
-        var result = await Client.ExecuteWithErrorHandling(new RestRequest($"/api/upload?id={uploadFileInfoRequest.Id}", Method.Post));
+        var request = new RestRequest($"/api/upload", Method.Post);
+
+        if (!string.IsNullOrEmpty(uploadFilesEntryRequest.Path))
+        {
+            request.AddParameter("path", uploadFilesEntryRequest.Path);
+        }
+        if (!string.IsNullOrEmpty(uploadFilesEntryRequest.Source))
+        {
+            request.AddParameter("source", uploadFilesEntryRequest.Source);
+        }
+
+        if (string.IsNullOrEmpty(uploadFilesEntryRequest.RefId) || string.IsNullOrEmpty(uploadFilesEntryRequest.Ref) || string.IsNullOrEmpty(uploadFilesEntryRequest.Field))
+        {
+            throw new PluginMisconfigurationException("Please make sure to provide Refid, Ref and Field parameters");
+        }
+
+        request.AddParameter("refId", uploadFilesEntryRequest.RefId);
+        request.AddParameter("ref", uploadFilesEntryRequest.Ref);
+        request.AddParameter("field", uploadFilesEntryRequest.Field);
+
+        foreach (var item in uploadFilesEntryRequest.Files)
+        {
+            var file = await FileManagementClient.DownloadAsync(item);
+            request.AddFile(item.Name, () => { return file; }, item.Name);
+        }
+        var result = await Client.ExecuteWithErrorHandling(request);
+    }
+
+    [Action("Update file info", Description = "Update a file in your application.")]
+    public async Task UpdateFileInfo([ActionParameter] UpdateFileInfoRequest updateFileInfoRequest)
+    {
+        var request = new RestRequest($"/api/upload?id={updateFileInfoRequest.Id}", Method.Post);
+
+        request.AddParameter("fileInfo",JsonSerializer.Serialize(updateFileInfoRequest.FileInfo));
+
+        var result = await Client.ExecuteWithErrorHandling(request);
     }
 
     [Action("Delete a file", Description = "Delete a file from your application.")]

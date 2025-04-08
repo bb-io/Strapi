@@ -24,25 +24,26 @@ namespace Apps.Strapi.Models.Requests.Documents
 
         public string? SelectFields { get; set; }
 
+        #region Relations //TODO: this does not belong here
 
         [Display("Connect Relations")]
 
-        public string? ConnectRelations { get; set; } //TODO: this does not belong here
+        public string? ConnectRelations { get; set; }
 
         [Display("Disconnect Relations")]
 
-        public string? DisconnectRelations { get; set; } //TODO: this does not belong here
+        public string? DisconnectRelations { get; set; }
 
 
         [Display("Set Relations")]
 
-        public string? SetRelations { get; set; } //TODO: this does not belong here
+        public string? SetRelations { get; set; }
+        #endregion
+
 
         [Display("Sort")]
 
         public string? Sort { get; set; } //TODO: Don't forget ascending, descending
-
-        //TODO: these do not belong here, more in a separate request
 
         #region Pagination 
 

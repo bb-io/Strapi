@@ -10,7 +10,7 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task GetFiles_ShouldReturnFiles()
         {
-            var fileAction = new FileActions(InvocationContext);
+            var fileAction = new FileActions(InvocationContext, FileManager);
 
             var files = await fileAction.GetFiles();
 
@@ -20,7 +20,7 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task GetFile_ShouldReturnFile()
         {
-            var fileAction = new FileActions(InvocationContext);
+            var fileAction = new FileActions(InvocationContext, FileManager);
 
             var file = await fileAction.GetFile(new GetFileRequest() { Id = 1});
 
@@ -30,7 +30,7 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task UploadFile_ShouldUploadFile()
         {
-            var fileAction = new FileActions(InvocationContext);
+            var fileAction = new FileActions(InvocationContext, FileManager);
 
             await fileAction.UploadFiles(new UploadFilesRequest()); //TODO create actual file upload request
 
@@ -40,9 +40,9 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task UploadFileInfo_ShouldUploadFileInfo()
         {
-            var fileAction = new FileActions(InvocationContext);
+            var fileAction = new FileActions(InvocationContext, FileManager);
 
-            await fileAction.UploadFileInfo(new UploadFileInfoRequest()); //TODO create actual file info upload request
+            await fileAction.UpdateFileInfo(new UpdateFileInfoRequest()); //TODO create actual file info upload request
             
             Assert.Fail(); //TODO fix test
         }
@@ -50,7 +50,7 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task DeleteFile_ShouldDeleteFile()
         {
-            var fileAction = new FileActions(InvocationContext);
+            var fileAction = new FileActions(InvocationContext, FileManager);
 
             await fileAction.DeleteFile(new DeleteFileRequest() { Id = 1 });
 

@@ -2,9 +2,9 @@
 
 namespace Apps.Strapi.Models.Requests.Files
 {
-    public class DeleteFileRequest  //TODO update this model
+    public class DeleteFileRequest
     {
-        [Display("File Id", Description = "Description")]
+        [Display("File Id", Description = "File Id to delete.")]
         public int? Id { get; set; }
     }
 }

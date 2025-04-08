@@ -4,7 +4,7 @@ namespace Apps.Strapi.Models.Requests.Files
 {
     public class GetFileRequest
     {
-        [Display("File ID")]
+        [Display("File ID", Description= "File Id to list.")]
         public int? Id { get; set; }
     }
 }

@@ -11,11 +11,11 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task GetDocuments_ShouldReturnDocuments()
         {
-            var documentAction = new DocumentActions(InvocationContext);
+            var documentAction = new DocumentActions(InvocationContext, FileManager);
 
             var result = await documentAction.GetDocuments(new GetDocumentsRequest
             {
-                ApiId = "about"
+                ApiId = "articles"
             });
 
             Assert.IsNotNull(result); // TODO: maybe check for type
@@ -24,7 +24,7 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task GetDocument_ShouldReturnDocument()
         {
-            var documentAction = new DocumentActions(InvocationContext);
+            var documentAction = new DocumentActions(InvocationContext, FileManager);
 
             var result =  await documentAction.GetDocument(new GetDocumentRequest
             {
@@ -37,11 +37,13 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task CreateDocument_ShouldCreateDocument()
         {
-            var documentAction = new DocumentActions(InvocationContext);
+            var documentAction = new DocumentActions(InvocationContext,FileManager);
 
+            var file = new Blackbird.Applications.Sdk.Common.Files.FileReference() { Name = "createdocument.json" };
             await documentAction.CreateDocument(new CreateDocumentRequest
             {
-                ApiId = "about"
+                ApiId = "articles",
+                File = file
             });
 
             Assert.Fail(); //TODO fix test
@@ -50,7 +52,7 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task UpdateDocument_ShouldUpdateDocument()
         {
-            var documentAction = new DocumentActions(InvocationContext);
+            var documentAction = new DocumentActions(InvocationContext, FileManager);
 
             await documentAction.UpdateDocument(new UpdateDocumentRequest
             {
@@ -64,7 +66,7 @@ namespace Tests.Strapi
         [TestMethod]
         public async Task DeleteDocument_ShouldDeleteDocument()
         {
-            var documentAction = new DocumentActions(InvocationContext);
+            var documentAction = new DocumentActions(InvocationContext, FileManager);
 
             await documentAction.DeleteDocument(new DeleteDocumentRequest
             {

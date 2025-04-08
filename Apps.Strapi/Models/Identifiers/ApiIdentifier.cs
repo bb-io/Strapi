@@ -1,8 +1,8 @@
 ﻿using Blackbird.Applications.Sdk.Common;
 
-namespace Apps.Strapi.Models.Requests.Documents
+namespace Apps.Strapi.Models.Identifiers
 {
-    public class BaseDocumentRequest //TODO maybe move this to identifiers?
+    public class ApiIdentifier
     {
         [Display("Api Id", Description = "Description")]
         public string ApiId { get; set; }
