@@ -18,7 +18,7 @@ namespace Tests.Strapi
                 ApiId = "articles"
             });
 
-            Assert.IsNotNull(result); // TODO: maybe check for type
+            Assert.AreNotEqual(0,result.Data.Count());
         }
 
         [TestMethod]
@@ -26,9 +26,10 @@ namespace Tests.Strapi
         {
             var documentAction = new DocumentActions(InvocationContext, FileManager);
 
-            var result =  await documentAction.GetDocument(new GetDocumentRequest
+            var result = await documentAction.GetDocument(new GetDocumentRequest()
             {
-                ApiId = "about"
+                ApiId = "articles",
+                DocumentId = "xp8871kg48cl3x0x9k35lxdw"
             });
 
             Assert.IsNotNull(result);
@@ -40,27 +41,29 @@ namespace Tests.Strapi
             var documentAction = new DocumentActions(InvocationContext,FileManager);
 
             var file = new Blackbird.Applications.Sdk.Common.Files.FileReference() { Name = "createdocument.json" };
-            await documentAction.CreateDocument(new CreateDocumentRequest
+            var result = await documentAction.CreateDocument(new CreateDocumentRequest
             {
                 ApiId = "articles",
                 File = file
             });
 
-            Assert.Fail(); //TODO fix test
+            Assert.IsNotNull(result);
         }
 
         [TestMethod]
         public async Task UpdateDocument_ShouldUpdateDocument()
         {
             var documentAction = new DocumentActions(InvocationContext, FileManager);
+            var file = new Blackbird.Applications.Sdk.Common.Files.FileReference() { Name = "updatedocument.json" };
 
-            await documentAction.UpdateDocument(new UpdateDocumentRequest
+            var result = await documentAction.UpdateDocument(new UpdateDocumentRequest
             {
-                ApiId = "about",
-                Id=1
+                ApiId = "articles",
+                DocumentId= "xp8871kg48cl3x0x9k35lxdw",
+                File = file
             });
 
-            Assert.Fail(); //TODO fix test
+            Assert.IsNotNull(result);
         }
 
         [TestMethod]
@@ -70,10 +73,17 @@ namespace Tests.Strapi
 
             await documentAction.DeleteDocument(new DeleteDocumentRequest
             {
-                ApiId = "about"
+                ApiId = "articles",
+                DocumentId = "xp8871kg48cl3x0x9k35lxdw"
             });
 
-            Assert.Fail(); //TODO fix test
+            var result = await documentAction.GetDocument(new GetDocumentRequest
+            {
+                ApiId = "articles",
+                DocumentId = "xp8871kg48cl3x0x9k35lxdw"
+            });
+
+            Assert.IsNull(result.DocumentId);
         }
     }
 }

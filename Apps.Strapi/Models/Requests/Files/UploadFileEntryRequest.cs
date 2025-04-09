@@ -14,7 +14,7 @@ namespace Apps.Strapi.Models.Requests.Files
         [Display("Path", Description = "The folder where the file(s) will be uploaded to (only supported on strapi-provider-upload-aws-s3).")]
         public string? Path { get; set; }
 
-        [Display("Ref Id", Description = "The ID of the entry which the file(s) will be linked to.")]
+        [Display("Ref DocumentId", Description = "The ID of the entry which the file(s) will be linked to.")]
         public string? RefId { get; set; }
 
         [Display("Ref", Description = "The unique ID(uid) of the model which the file(s) will be linked to ")]

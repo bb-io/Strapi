@@ -5,7 +5,7 @@ namespace Apps.Strapi.Models.Requests.Documents
 {
     public class GetDocumentsRequest : ApiIdentifier
     {
-        [Display("Id", Description ="Description")]
-        public int? Id { get; set; }
+        [Display("DocumentId", Description ="DocumentId of the documents you want to return")] //TODO this might not be needed.
+        public string? DocumentId { get; set; }
     }
 }

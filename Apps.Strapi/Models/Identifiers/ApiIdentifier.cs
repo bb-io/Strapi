@@ -4,7 +4,7 @@ namespace Apps.Strapi.Models.Identifiers
 {
     public class ApiIdentifier
     {
-        [Display("Api Id", Description = "Description")]
+        [Display("Api DocumentId", Description = "Description")]
         public string ApiId { get; set; }
     }
 }

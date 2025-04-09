@@ -8,7 +8,7 @@ namespace Apps.Strapi.Models.Responses
         [JsonProperty("id")]
         int Id { get; set; }
 
-        [JsonProperty("documentId")]
+        [JsonProperty("DocumentId")]
         string DocumentId { get; set; }
 
         [JsonProperty("name")]

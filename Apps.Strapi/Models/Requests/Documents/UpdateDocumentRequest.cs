@@ -6,8 +6,8 @@ namespace Apps.Strapi.Models.Requests.Documents
 {
     public class UpdateDocumentRequest : ApiIdentifier
     {
-        [Display("Id", Description = "Id of the document")]
-        public int? Id { get; set; }
+        [Display("DocumentId", Description = "DocumentId of the document")]
+        public string? DocumentId { get; set; }
 
         [Display("Document to upload", Description = "The document to upload.")]
 

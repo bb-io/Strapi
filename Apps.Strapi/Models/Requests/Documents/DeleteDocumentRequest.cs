@@ -5,7 +5,7 @@ namespace Apps.Strapi.Models.Requests.Documents
 {
     public class DeleteDocumentRequest : ApiIdentifier
     {
-        [Display("Id", Description = "Description")]
-        public int? Id { get; set; }
+        [Display("DocumentId", Description = "Description")]
+        public string? DocumentId { get; set; }
     }
 }

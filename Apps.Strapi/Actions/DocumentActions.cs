@@ -19,7 +19,7 @@ public class DocumentActions(InvocationContext invocationContext, IFileManagemen
     {
         string filter = BuildParameters(parametersRequest);
 
-        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest($"/api/{request.ApiId}{filter}", Method.Get));
+        var result = await Client.ExecuteWithErrorHandling<DocumentsResponse>(new RestRequest($"{request.ApiId}{filter}", Method.Get));
 
         if (result == null)
         {
@@ -33,19 +33,19 @@ public class DocumentActions(InvocationContext invocationContext, IFileManagemen
 
 
 
-    [Action("Get Document", Description = "Returns a document by documentId.")]
+    [Action("Get Document", Description = "Returns a document by DocumentId.")]
     public async Task<DocumentResponse> GetDocument([ActionParameter] GetDocumentRequest request, [ActionParameter] ParametersRequest parametersRequest = default)
     {
         string query = string.Empty;
         var filter = BuildParameters(parametersRequest);
 
-        if (request.Id != null)
+        if (!string.IsNullOrEmpty(request.DocumentId))
         {
-            query = $"/api/{request.ApiId}/{request.Id}{filter}";
+            query = $"/{request.ApiId}/{request.DocumentId}{filter}";
         }
         else
         {
-            query = $"/api/{request.ApiId}{filter}";
+            query = $"/{request.ApiId}{filter}";
         }
         var result = await Client.ExecuteWithErrorHandling<DocumentResponse>(new RestRequest(query, Method.Get));
 
@@ -60,9 +60,9 @@ public class DocumentActions(InvocationContext invocationContext, IFileManagemen
     {
         string query = string.Empty;
         Method method;
-        if (request.Id != null)
+        if (!string.IsNullOrEmpty(request.DocumentId))
         {
-            query = $"/{request.ApiId}/{request.Id}";
+            query = $"/{request.ApiId}/{request.DocumentId}";
             method = Method.Post;
         }
         else
@@ -103,9 +103,9 @@ public class DocumentActions(InvocationContext invocationContext, IFileManagemen
     public async Task<DocumentResponse> UpdateDocument([ActionParameter] UpdateDocumentRequest request)
     {
         string query = string.Empty;
-        if (request.Id != null)
+        if (!string.IsNullOrEmpty(request.DocumentId))
         {
-            query = $"/{request.ApiId}/{request.Id}";
+            query = $"/{request.ApiId}/{request.DocumentId}";
         }
         else
         {
@@ -142,13 +142,13 @@ public class DocumentActions(InvocationContext invocationContext, IFileManagemen
     public async Task DeleteDocument([ActionParameter] DeleteDocumentRequest request)
     {
         string query = string.Empty;
-        if (request.Id != null)
+        if (request.DocumentId != null)
         {
-            query = $"/api/{request.ApiId}/{request.Id}";
+            query = $"/{request.ApiId}/{request.DocumentId}";
         }
         else
         {
-            query = $"/api/{request.ApiId}";
+            query = $"/{request.ApiId}";
         }
         var result = await Client.ExecuteWithErrorHandling(new RestRequest(query, Method.Delete));
 
