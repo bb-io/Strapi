@@ -12,7 +12,7 @@ public class StrapiClient : BlackBirdRestClient
 {
     public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> creds) : base(new()
     {
-        BaseUrl = new(creds.Get(CredsNames.Url).Value.Trim('/')),
+        BaseUrl = new(creds.Get(CredsNames.BaseUrl).Value.Trim('/')),
         ThrowOnAnyError = false
     })
     {
@@ -25,6 +25,6 @@ public class StrapiClient : BlackBirdRestClient
         var error = JsonConvert.DeserializeObject(response.Content);
         var errorMessage = "";
 
-        throw new PluginApplicationException(errorMessage);
+        throw new PluginApplicationException(response.Content);
     }
 }

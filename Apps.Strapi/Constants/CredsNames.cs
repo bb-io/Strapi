@@ -2,6 +2,6 @@ namespace Apps.Strapi.Constants;
 
 public static class CredsNames
 {
-    public const string ApiToken = "apiToken";
-    public const string Url = "url";
+    public const string BaseUrl = "base_url";
+    public const string ApiToken = "api_token";
 }

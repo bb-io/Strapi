@@ -14,9 +14,16 @@ public class ConnectionDefinition : IConnectionDefinition
             AuthenticationType = ConnectionAuthenticationType.Undefined,
             ConnectionProperties = new List<ConnectionProperty>
             {
-                new(CredsNames.ApiToken) { DisplayName = "API Token", Sensitive = true},
-                new(CredsNames.Url) { DisplayName = "URL", Sensitive = false}
-
+                new(CredsNames.BaseUrl)
+                {
+                    DisplayName = "Base URL",
+                    Sensitive = false
+                },
+                new(CredsNames.ApiToken) 
+                { 
+                    DisplayName = "API Token", 
+                    Sensitive = true
+                }
             }
         }
     };
