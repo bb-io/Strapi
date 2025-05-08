@@ -44,7 +44,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
 
         var response = await Client.ExecuteWithErrorHandling(request);       
-        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId);
+        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId);
         var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlString));
         memoryStream.Position = 0;
 

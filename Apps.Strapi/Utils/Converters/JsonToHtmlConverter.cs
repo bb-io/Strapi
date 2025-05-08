@@ -27,7 +27,7 @@ public class JsonToHtmlConverter
         return title;
     }
 
-    public static string ConvertToHtml(string json, string contentId)
+    public static string ConvertToHtml(string json, string contentId, string contentType)
     {
         var jsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
         var dataObj = jsonObj["data"] as JObject;
@@ -56,7 +56,7 @@ public class JsonToHtmlConverter
 
         var metaContentType = doc.CreateElement("meta");
         metaContentType.SetAttributeValue("name", MetadataKeys.ContentType);
-        metaContentType.SetAttributeValue("content", "entry");
+        metaContentType.SetAttributeValue("content", contentType);
         headNode.AppendChild(metaContentType);
 
         string locale = dataObj["locale"]?.ToString() ?? "en";
