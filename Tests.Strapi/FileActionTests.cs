@@ -1,6 +1,7 @@
 ﻿using Apps.Strapi.Actions;
 using Tests.Strapi.Base;
 using Apps.Strapi.Models.Requests.Files;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Strapi
 {

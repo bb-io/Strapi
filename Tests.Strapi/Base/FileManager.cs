@@ -1,5 +1,6 @@
 using Blackbird.Applications.Sdk.Common.Files;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Strapi.Base;
 
@@ -36,7 +37,8 @@ public class FileManager : IFileManagementClient
     public Task<FileReference> UploadAsync(Stream stream, string contentType, string fileName)
     {
         var path = Path.Combine(outputFolder, fileName);
-        new FileInfo(path).Directory.Create();
+        FileInfo fileInfo = new(path);
+        fileInfo.Directory!.Create();
         using (var fileStream = File.Create(path))
         {
             stream.CopyTo(fileStream);

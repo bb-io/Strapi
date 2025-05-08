@@ -2,6 +2,6 @@
 {
     public class FilesResponse
     {
-        IEnumerable<FileResponse> Files { get; set; } = new List<FileResponse>();
+        IEnumerable<ApiFileResponse> Files { get; set; } = new List<ApiFileResponse>();
     }
 }

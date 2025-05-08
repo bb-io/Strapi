@@ -1,6 +1,7 @@
 ﻿using Apps.Strapi.Handlers.Static;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dictionaries;
 
 
 namespace Apps.Strapi.Models.Requests.Documents
@@ -10,7 +11,7 @@ namespace Apps.Strapi.Models.Requests.Documents
         [Display("Filters")]
         public string? Filters { get; set; }
 
-        [Display("Locale"),DataSource(typeof(LanguageDataHandler))]
+        [Display("Locale"), StaticDataSource(typeof(LanguageDataHandler))]
         public string? Locale { get; set; } 
         
         [Display("Status"),DataSource(typeof(StatusDataHandler))]

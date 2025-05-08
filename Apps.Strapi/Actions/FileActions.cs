@@ -11,20 +11,20 @@ using System.Text.Json;
 namespace Apps.Strapi.Actions;
 
 [ActionList]
-public class FileActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : Invocable(invocationContext, fileManagementClient)
+public class FileActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : Invocable(invocationContext)
 {
     [Action("Get a list of files", Description = "Get a list of files")]
-    public async Task<IEnumerable<FileResponse>> GetFiles()
+    public async Task<IEnumerable<ApiFileResponse>> GetFiles()
     {
-        var result = await Client.ExecuteWithErrorHandling<IEnumerable<FileResponse>>(new RestRequest($"/api/upload/files", Method.Get));
+        var result = await Client.ExecuteWithErrorHandling<IEnumerable<ApiFileResponse>>(new RestRequest($"/api/upload/files", Method.Get));
         
         return result;
     }
 
     [Action("Get a file", Description = "Get a specific file")]
-    public async Task<FileResponse> GetFile([ActionParameter] GetFileRequest getFileRequest)
+    public async Task<ApiFileResponse> GetFile([ActionParameter] GetFileRequest getFileRequest)
     {
-        var result = await Client.ExecuteWithErrorHandling<FileResponse>(new RestRequest($"/api/upload/files/{getFileRequest.Id}", Method.Get));
+        var result = await Client.ExecuteWithErrorHandling<ApiFileResponse>(new RestRequest($"/api/upload/files/{getFileRequest.Id}", Method.Get));
 
         return result;
     }
@@ -36,7 +36,7 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
 
         foreach (var item in uploadFilesRequest.Files)
         {
-            var file = await FileManagementClient.DownloadAsync(item);
+            var file = await fileManagementClient.DownloadAsync(item);
             request.AddFile(item.Name, () => { return file; }, item.Name);
         }
 
@@ -68,7 +68,7 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
 
         foreach (var item in uploadFilesEntryRequest.Files)
         {
-            var file = await FileManagementClient.DownloadAsync(item);
+            var file = await fileManagementClient.DownloadAsync(item);
             request.AddFile(item.Name, () => { return file; }, item.Name);
         }
         var result = await Client.ExecuteWithErrorHandling(request);
@@ -87,6 +87,6 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
     [Action("Delete a file", Description = "Delete a file from your application.")]
     public async Task DeleteFile([ActionParameter] DeleteFileRequest deleteFileRequest)
     {
-        var result = await Client.ExecuteWithErrorHandling<FileResponse>(new RestRequest($"/api/upload/files/{deleteFileRequest.Id}", Method.Delete));
+        var result = await Client.ExecuteWithErrorHandling<ApiFileResponse>(new RestRequest($"/api/upload/files/{deleteFileRequest.Id}", Method.Delete));
     }
 }
