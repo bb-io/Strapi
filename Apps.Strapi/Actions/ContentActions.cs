@@ -52,6 +52,25 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{title}.html");
 
         return new(fileReference);
+    }    
+    
+    [Action("Upload content", Description = "Uploads a HTML file to a specific language to localize the content.")]
+    public async Task UploadContentAsync([ActionParameter] UploadContentRequest request)
+    {
+        var fileStream = await fileManagementClient.DownloadAsync(request.File);
+        var memoryStream = new MemoryStream();
+        await fileStream.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+
+        var htmlString = System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+        var metadata = HtmlToJsonConverter.ExtractMetadata(htmlString);
+        var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString);
+
+        var apiRequest = new RestRequest($"/api/{metadata.ContentTypeId}/{metadata.ContentId}", Method.Put)
+            .AddQueryParameter("locale", request.TargetLanguage)
+            .AddBody(jsonContent, ContentType.Json);
+
+        await Client.ExecuteWithErrorHandling(apiRequest);
     }
 
     [Action("Update Document", Description = "Partially updates a document by id and returns its value.")]

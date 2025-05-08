@@ -1,6 +1,7 @@
 using Apps.Strapi.Actions;
 using Apps.Strapi.Models.Identifiers;
 using Apps.Strapi.Models.Requests;
+using Blackbird.Applications.Sdk.Common.Files;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using Tests.Strapi.Base;
@@ -61,5 +62,25 @@ public class ContentActionsTests : TestBase
         Assert.AreEqual("text/html", response.File.ContentType);
         
         Console.WriteLine(JsonConvert.SerializeObject(response.File, Formatting.Indented));
+    }
+
+    [TestMethod]
+    public async Task UploadContentAsync_ValidRequest_UploadsSuccessfully()
+    {
+        // Arrange
+        var request = new UploadContentRequest
+        {
+            File = new FileReference
+            {
+                Name = "Lion [French].html",
+                ContentType = "text/html"
+            },
+            TargetLanguage = "fr"
+        };
+
+        // Act & Assert
+        await _contentActions.UploadContentAsync(request);
+        
+        Console.WriteLine($"Successfully uploaded content from {request.File.Name} to language {request.TargetLanguage}");
     }
 }

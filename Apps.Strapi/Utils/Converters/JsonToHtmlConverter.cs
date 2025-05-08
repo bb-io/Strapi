@@ -6,13 +6,8 @@ using Apps.Strapi.Constants;
 
 namespace Apps.Strapi.Utils.Converters;
 
-public class JsonToHtmlConverter
+public static class JsonToHtmlConverter
 {
-    private static readonly HashSet<string> NonLocalizableProperties = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "id", "documentId", "createdAt", "updatedAt", "publishedAt", "locale"
-    };
-
     public static string ExtractTitle(string json, string defaultName)
     {
         var jsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
@@ -80,7 +75,7 @@ public class JsonToHtmlConverter
         {
             string currentPath = AppendJsonPath(jsonPath, property.Key);
 
-            if (NonLocalizableProperties.Contains(property.Key))
+            if (JsonProperties.NonLocalizableProperties.Contains(property.Key))
             {
                 continue;
             }
