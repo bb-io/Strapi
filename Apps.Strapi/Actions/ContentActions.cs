@@ -73,42 +73,6 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         await Client.ExecuteWithErrorHandling(apiRequest);
     }
 
-    [Action("Update Document", Description = "Partially updates a document by id and returns its value.")]
-    public async Task<DocumentResponse> UpdateDocument([ActionParameter] UpdateDocumentRequest request)
-    {
-        string query = string.Empty;
-        if (!string.IsNullOrEmpty(request.DocumentId))
-        {
-            query = $"/{request.ApiId}/{request.DocumentId}";
-        }
-        else
-        {
-            query = $"/{request.ApiId}";
-        }
-        var restRequest = new RestRequest(query, Method.Put);
-        var file = await fileManagementClient.DownloadAsync(request.File);
-        using var sr = new StreamReader(file);
-        var fileContent = sr.ReadToEnd();
-
-        restRequest.AddBody(fileContent, "application/json");
-
-        var result = await Client.ExecuteWithErrorHandling<DocumentResponse>(restRequest);
-
-        if (result == null)
-        {
-            throw new PluginApplicationException();
-        }
-
-        return new DocumentResponse
-        {
-            DocumentId = result.DocumentId,
-            CreatedAt = result.CreatedAt,
-            UpdatedAt = result.UpdatedAt,
-            PublishedAt = result.PublishedAt,
-            Locale = result.Locale
-        };
-    }
-
     [Action("Delete content", Description = "Deletes a content by ID.")]
     public async Task DeleteContentAsync([ActionParameter] ContentIdentifier request)
     {

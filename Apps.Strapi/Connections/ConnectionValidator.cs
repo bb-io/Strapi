@@ -5,11 +5,9 @@ using RestSharp;
 
 namespace Apps.Strapi.Connections;
 
-public class ConnectionValidator: IConnectionValidator
+public class ConnectionValidator : IConnectionValidator
 {
-    public async ValueTask<ConnectionValidationResponse> ValidateConnection(
-        IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        CancellationToken cancellationToken)
+    public async ValueTask<ConnectionValidationResponse> ValidateConnection(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, CancellationToken cancellationToken)
     {
         try
         {
