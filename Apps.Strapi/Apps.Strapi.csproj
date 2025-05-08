@@ -11,15 +11,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="image\**" />
-      <EmbeddedResource Remove="image\**" />
-      <None Remove="image\**" />
+        <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.12.0" />
+        <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.25" />
+        <PackageReference Include="HtmlAgilityPack" Version="1.6.13" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.11.0" />
-        <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.25" />
-        <PackageReference Include="HtmlAgilityPack" Version="1.6.13" />
+        <EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png" />
     </ItemGroup>
 
 </Project>
