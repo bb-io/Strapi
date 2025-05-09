@@ -14,12 +14,12 @@ public class ConnectionDefinition : IConnectionDefinition
             AuthenticationType = ConnectionAuthenticationType.Undefined,
             ConnectionProperties =
             [
-                new(CredsNames.BaseUrl)
+                new(CredNames.BaseUrl)
                 {
                     DisplayName = "Base URL",
                     Sensitive = false
                 },
-                new(CredsNames.ApiToken) 
+                new(CredNames.ApiToken) 
                 { 
                     DisplayName = "API Token", 
                     Sensitive = true

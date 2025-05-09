@@ -7,7 +7,8 @@ using RestSharp;
 
 namespace Apps.Strapi.Handlers;
 
-public class ContentDataHandler(InvocationContext invocationContext, [ActionParameter] ContentTypeIdentifier identifier) : Invocable(invocationContext), IAsyncDataSourceItemHandler
+public class ContentDataHandler(InvocationContext invocationContext, [ActionParameter] ContentTypeIdentifier identifier) 
+    : Invocable(invocationContext), IAsyncDataSourceItemHandler
 {
     public async Task<IEnumerable<DataSourceItem>> GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
     {

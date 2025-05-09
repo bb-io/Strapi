@@ -13,11 +13,11 @@ public class StrapiClient : BlackBirdRestClient
 {
     public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> creds) : base(new()
     {
-        BaseUrl = new(creds.Get(CredsNames.BaseUrl).Value.Trim('/')),
+        BaseUrl = new(creds.Get(CredNames.BaseUrl).Value.Trim('/')),
         ThrowOnAnyError = false
     })
     {
-        var apiToken = creds.Get(CredsNames.ApiToken).Value;
+        var apiToken = creds.Get(CredNames.ApiToken).Value;
         this.AddDefaultHeader("Authorization", $"Bearer {apiToken}");
     }
 

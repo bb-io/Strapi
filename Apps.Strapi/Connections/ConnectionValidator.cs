@@ -14,21 +14,10 @@ public class ConnectionValidator : IConnectionValidator
             var client = new StrapiClient(authenticationCredentialsProviders);
             var result = await client.ExecuteWithErrorHandling(new RestRequest());
 
-            if (result.StatusCode == System.Net.HttpStatusCode.OK)
+            return new()
             {
-                return new()
-                {
-                    IsValid = true
-                };
-            }
-            else
-            {
-                return new()
-                {
-                    IsValid = false,
-                    Message = result.Content
-                };
-            }
+                IsValid = true
+            };
         }
         catch (Exception ex)
         {
