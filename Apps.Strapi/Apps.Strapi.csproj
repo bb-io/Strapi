@@ -4,8 +4,8 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Product>Strapi</Product>
-        <Description>Description</Description>
+        <Product>Strapi [Beta]</Product>
+        <Description>Strapi is the next-gen headless CMS, open-source, JavaScript/TypeScript, enabling content-rich experiences to be created, managed and exposed to any digital device.</Description>
         <Version>1.0.0</Version>
         <AssemblyName>Apps.Strapi</AssemblyName>
     </PropertyGroup>
