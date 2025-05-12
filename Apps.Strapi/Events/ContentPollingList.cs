@@ -14,9 +14,29 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
     public async Task<PollingEventResponse<DateMemory, SearchContentResponse>> OnContentCreatedOrUpdatedAsync(PollingEventRequest<DateMemory> request,
         [PollingEventParameter] ContentFilters contentRequest)
     {
-        if(request.Memory == null)
+        return await ProcessPollingRequest(request, contentRequest, (apiRequest, lastPollingTime) =>
         {
-            return new() 
+            apiRequest.AddQueryParameter("filters[$or][0][createdAt][$gte]", lastPollingTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
+            apiRequest.AddQueryParameter("filters[$or][1][updatedAt][$gte]", lastPollingTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
+        });
+    }
+    
+    [PollingEvent("On content published", Description = "Polling event that periodically checks for newly published content. If newly published content is found, it will be returned as a list of content items.")]
+    public async Task<PollingEventResponse<DateMemory, SearchContentResponse>> OnContentPublishedAsync(PollingEventRequest<DateMemory> request,
+        [PollingEventParameter] ContentFilters contentRequest)
+    {
+        return await ProcessPollingRequest(request, contentRequest, (apiRequest, lastPollingTime) =>
+            apiRequest.AddQueryParameter("filters[$or][0][publishedAt][$gte]", lastPollingTime.ToString("yyyy-MM-ddTHH:mm:ssZ")));
+    }
+
+    private async Task<PollingEventResponse<DateMemory, SearchContentResponse>> ProcessPollingRequest(
+        PollingEventRequest<DateMemory> request,
+        ContentFilters contentRequest,
+        Action<RestRequest, DateTime> addFilters)
+    {
+        if (request.Memory == null)
+        {
+            return new()
             {
                 Result = null,
                 FlyBird = false,
@@ -27,19 +47,8 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
             };
         }
 
-        var apiRequest = new RestRequest($"/api/{contentRequest.ContentTypeId}");
-        if(contentRequest.Language != null)
-        {
-            apiRequest.AddQueryParameter("locale", contentRequest.Language);
-        }
-
-        if(contentRequest.Status != null)
-        {
-            apiRequest.AddQueryParameter("status", contentRequest.Status);
-        }
-
-        apiRequest.AddQueryParameter("filters[$or][0][createdAt][$gte]", request.Memory.LastPollingTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
-        apiRequest.AddQueryParameter("filters[$or][1][updatedAt][$gte]", request.Memory.LastPollingTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
+        var apiRequest = BuildBaseApiRequest(contentRequest);
+        addFilters.Invoke(apiRequest, request.Memory.LastPollingTime);
 
         var result = await Client.PaginateAsync<DocumentResponse>(apiRequest);
         return new()
@@ -51,5 +60,22 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
                 LastPollingTime = DateTime.UtcNow
             }
         };
+    }
+
+    private RestRequest BuildBaseApiRequest(ContentFilters contentRequest)
+    {
+        var apiRequest = new RestRequest($"/api/{contentRequest.ContentTypeId}");
+
+        if (contentRequest.Language != null)
+        {
+            apiRequest.AddQueryParameter("locale", contentRequest.Language);
+        }
+
+        if (contentRequest.Status != null)
+        {
+            apiRequest.AddQueryParameter("status", contentRequest.Status);
+        }
+
+        return apiRequest;
     }
 }
