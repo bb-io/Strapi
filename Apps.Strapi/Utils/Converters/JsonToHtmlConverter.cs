@@ -22,7 +22,7 @@ public static class JsonToHtmlConverter
         return title;
     }
 
-    public static string ConvertToHtml(string json, string contentId, string contentType)
+    public static string ConvertToHtml(string json, string? contentId, string contentType)
     {
         var jsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
         var dataObj = jsonObj["data"] as JObject;
@@ -36,11 +36,10 @@ public static class JsonToHtmlConverter
         CreateHtmlStructure(doc, jsonObj, dataObj, contentId, contentType);
         
         ProcessJsonObject(dataObj, doc.DocumentNode.SelectSingleNode("//body"), doc, "data");
-
         return "<!DOCTYPE html>\n" + doc.DocumentNode.OuterHtml;
     }
 
-    private static void CreateHtmlStructure(HtmlDocument doc, JObject jsonObj, JObject dataObj, string contentId, string contentType)
+    private static void CreateHtmlStructure(HtmlDocument doc, JObject jsonObj, JObject dataObj, string? contentId, string contentType)
     {
         var htmlNode = CreateElement(doc, "html");
         doc.DocumentNode.AppendChild(htmlNode);
@@ -49,7 +48,11 @@ public static class JsonToHtmlConverter
         htmlNode.AppendChild(headNode);
 
         AddMetaTag(doc, headNode, "charset", "UTF-8");
-        AddMetaTag(doc, headNode, MetadataKeys.ContentId, contentId);
+        if(!string.IsNullOrEmpty(contentId))
+        {
+            AddMetaTag(doc, headNode, MetadataKeys.ContentId, contentId);
+        }
+        
         AddMetaTag(doc, headNode, MetadataKeys.ContentType, contentType);
 
         string locale = dataObj["locale"]?.ToString() ?? "en";

@@ -48,7 +48,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             Position = 0
         };
 
-        var title = JsonToHtmlConverter.ExtractTitle(response.Content!, identifier.ContentId);
+        var title = JsonToHtmlConverter.ExtractTitle(response.Content!, identifier.ContentId ?? identifier.ContentTypeId);
         var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{title}.html");
 
         return new(fileReference);
@@ -66,7 +66,13 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var metadata = HtmlToJsonConverter.ExtractMetadata(htmlString);
         var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString);
 
-        var apiRequest = new RestRequest($"/api/{metadata.ContentTypeId}/{metadata.ContentId}", Method.Put)
+        var endpoint = $"/api/{metadata.ContentTypeId}";
+        if(!string.IsNullOrEmpty(metadata.ContentId))
+        {
+            endpoint += $"/{metadata.ContentId}";
+        }
+
+        var apiRequest = new RestRequest(endpoint, Method.Put)
             .AddQueryParameter("locale", request.TargetLanguage)
             .AddBody(jsonContent, ContentType.Json);
 
