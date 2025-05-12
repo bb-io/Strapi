@@ -11,7 +11,7 @@ namespace Tests.Strapi;
 [TestClass]
 public class ContentActionsTests : TestBase
 {
-    private ContentActions _contentActions;
+    private ContentActions? _contentActions;
 
     [TestInitialize]
     public void Setup()
@@ -29,7 +29,7 @@ public class ContentActionsTests : TestBase
             Status = "published"
         };
 
-        var response = await _contentActions.SearchContentAsync(request);
+        var response = await _contentActions!.SearchContentAsync(request);
 
         Assert.IsNotNull(response);
         Assert.IsTrue(response.Content.Count > 0);
@@ -53,7 +53,7 @@ public class ContentActionsTests : TestBase
         };
 
         // Act
-        var response = await _contentActions.DownloadContentAsync(identifier);
+        var response = await _contentActions!.DownloadContentAsync(identifier);
 
         // Assert
         Assert.IsNotNull(response);
@@ -79,7 +79,7 @@ public class ContentActionsTests : TestBase
         };
 
         // Act & Assert
-        await _contentActions.UploadContentAsync(request);
+        await _contentActions!.UploadContentAsync(request);
         
         Console.WriteLine($"Successfully uploaded content from {request.File.Name} to language {request.TargetLanguage}");
     }

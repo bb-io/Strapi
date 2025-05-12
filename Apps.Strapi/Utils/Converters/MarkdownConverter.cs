@@ -6,65 +6,93 @@ namespace Apps.Strapi.Utils.Converters;
 
 public static class MarkdownConverter
 {
-    public static HtmlNode ToHtml(HtmlDocument doc, string currentPath, JToken jToken)
+    public static HtmlNode ToHtml(HtmlDocument htmlDocument, string jsonPath, JToken markdownContent)
     {
-        string value = jToken.ToString();
+        if (htmlDocument == null) throw new ArgumentNullException(nameof(htmlDocument));
+        if (markdownContent == null) throw new ArgumentNullException(nameof(markdownContent));
 
-        var container = doc.CreateElement("div");
+        string contentValue = markdownContent.ToString();
+        var containerDiv = htmlDocument.CreateElement("div");
 
-        if (value.Contains("\n"))
+        if (contentValue.Contains('\n'))
         {
-            var lines = value.Split(['\n']);
-            container.SetAttributeValue("class", "md-rich-text");
-            container.SetAttributeValue("data-json-path", currentPath);
-
-            foreach (var line in lines)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    var br = doc.CreateElement("br");
-                    container.AppendChild(br);
-                    continue;
-                }
-
-                var p = doc.CreateElement("p");
-                p.SetAttributeValue("class", "property-value");
-                p.InnerHtml = line;
-                container.AppendChild(p);
-            }
+            RenderMultilineContent(htmlDocument, jsonPath, contentValue, containerDiv);
         }
         else
         {
-            var valueSpan = doc.CreateElement("span");
-            valueSpan.SetAttributeValue("class", "property-value");
-            valueSpan.SetAttributeValue("data-json-path", currentPath);
-            valueSpan.InnerHtml = value;
-            container.AppendChild(valueSpan);
+            RenderSingleLineContent(htmlDocument, jsonPath, contentValue, containerDiv);
         }
 
-        return container;
+        return containerDiv;
     }
 
     public static string ToMarkdown(HtmlNode node)
     {
-        var sb = new StringBuilder();
+        if (node == null) throw new ArgumentNullException(nameof(node));
+
+        var markdownBuilder = new StringBuilder();
 
         foreach (var child in node.ChildNodes)
         {
             if (child.Name == "p")
             {
-                sb.AppendLine(child.InnerText);
+                markdownBuilder.AppendLine(child.InnerText);
             }
             else if (child.Name == "br")
             {
-                sb.AppendLine();
+                markdownBuilder.AppendLine();
             }
             else
             {
-                sb.Append(child.InnerText);
+                markdownBuilder.Append(child.InnerText);
             }
         }
 
-        return sb.ToString();
+        return markdownBuilder.ToString();
     }
+
+    #region Private Helper Methods
+
+    private static void RenderMultilineContent(HtmlDocument htmlDocument, string jsonPath, string content, HtmlNode containerDiv)
+    {
+        string[] lines = content.Split(['\n']);
+
+        SetContainerAttributes(containerDiv, jsonPath, isRichText: true);
+
+        foreach (var line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                var lineBreak = htmlDocument.CreateElement("br");
+                containerDiv.AppendChild(lineBreak);
+                continue;
+            }
+
+            var paragraph = htmlDocument.CreateElement("p");
+            paragraph.SetAttributeValue("class", "property-value");
+            paragraph.InnerHtml = line;
+            containerDiv.AppendChild(paragraph);
+        }
+    }
+
+    private static void RenderSingleLineContent(HtmlDocument htmlDocument, string jsonPath, string content, HtmlNode containerDiv)
+    {
+        var valueSpan = htmlDocument.CreateElement("span");
+        valueSpan.SetAttributeValue("class", "property-value");
+        valueSpan.SetAttributeValue("data-json-path", jsonPath);
+        valueSpan.InnerHtml = content;
+        containerDiv.AppendChild(valueSpan);
+    }
+
+    private static void SetContainerAttributes(HtmlNode container, string jsonPath, bool isRichText)
+    {
+        if (isRichText)
+        {
+            container.SetAttributeValue("class", "md-rich-text");
+        }
+
+        container.SetAttributeValue("data-json-path", jsonPath);
+    }
+
+    #endregion
 }

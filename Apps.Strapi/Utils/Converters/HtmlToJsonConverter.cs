@@ -4,7 +4,6 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Diagnostics;
 using System.Web;
 
 namespace Apps.Strapi.Utils.Converters;
@@ -143,7 +142,7 @@ public static class HtmlToJsonConverter
                     continue;
                 }
 
-                var blockJson = BuildRichTextBlock(block);
+                var blockJson = RichTextConverter.BuildBlock(block);
                 if (blockJson != null)
                 {
                     richTextArray.Add(blockJson);
@@ -152,106 +151,6 @@ public static class HtmlToJsonConverter
 
             SetValueAtPath(jsonObj, jsonPath, richTextArray);
         }
-    }
-
-    private static JObject BuildRichTextBlock(HtmlNode blockNode)
-    {
-        var blockJson = new JObject();
-        string blockType = GetBlockType(blockNode);
-        blockJson["type"] = blockType;
-
-        if (blockType == "heading")
-        {
-            int level = int.Parse(blockNode.Name.Substring(1));
-            blockJson["level"] = level;
-        }
-        else if (blockType == "list")
-        {
-            // Add format property for lists based on the tag
-            blockJson["format"] = blockNode.Name == "ul" ? "unordered" : "ordered";
-        }
-
-        var children = new JArray();
-        
-        if (blockType == "list")
-        {
-            // Process list items for lists
-            foreach (var listItemNode in blockNode.ChildNodes.Where(n => n.NodeType == HtmlNodeType.Element))
-            {
-                var listItemJson = new JObject
-                {
-                    ["type"] = "list-item"
-                };
-                
-                var listItemChildren = new JArray();
-                
-                foreach (var textNode in listItemNode.ChildNodes.Where(n => n.NodeType == HtmlNodeType.Element))
-                {
-                    var textJson = new JObject
-                    {
-                        ["type"] = "text",
-                        ["text"] = textNode.InnerText
-                    };
-                    
-                    // Add formatting properties if needed
-                    if (textNode.Name == "strong" || textNode.ParentNode.Name == "strong")
-                        textJson["bold"] = true;
-                    if (textNode.Name == "em" || textNode.ParentNode.Name == "em")
-                        textJson["italic"] = true;
-                    if (textNode.Name == "u" || textNode.ParentNode.Name == "u")
-                        textJson["underline"] = true;
-                    
-                    listItemChildren.Add(textJson);
-                }
-                
-                listItemJson["children"] = listItemChildren;
-                children.Add(listItemJson);
-            }
-        }
-        else
-        {
-            // Process regular blocks (paragraphs, headings, etc.)
-            foreach (var childNode in blockNode.ChildNodes.Where(n => n.NodeType == HtmlNodeType.Element))
-            {
-                var textChild = new JObject();
-                textChild["type"] = "text";
-                textChild["text"] = childNode.InnerText;
-
-                if (childNode.Name == "strong" || childNode.ParentNode.Name == "strong")
-                {
-                    textChild["bold"] = true;
-                }
-
-                if (childNode.Name == "em" || childNode.ParentNode.Name == "em")
-                {
-                    textChild["italic"] = true;
-                }
-
-                if (childNode.Name == "u" || childNode.ParentNode.Name == "u")
-                {
-                    textChild["underline"] = true;
-                }
-
-                children.Add(textChild);
-            }
-        }
-
-        blockJson["children"] = children;
-        return blockJson;
-    }
-
-    private static string GetBlockType(HtmlNode node)
-    {
-        return node.Name switch
-        {
-            var name when name.StartsWith("h") => "heading",
-            "ol" => "list",
-            "ul" => "list",
-            "li" => "list-item",
-            "pre" => "code",
-            "blockquote" => "quote",
-            _ => "paragraph",
-        };
     }
 
     private static void UpdateJsonProperty(JObject json, string path, string value)
@@ -274,16 +173,16 @@ public static class HtmlToJsonConverter
 
             if (segment.IsArrayIndex)
             {
-                if (current[segment.Name] is JArray array && array.Count > segment.Index)
+                if (current![segment.Name] is JArray array && array.Count > segment.Index)
                     current = array[segment.Index];
                 else
                     return;
             }
             else
             {
-                if (current[segment.Name] == null)
+                if (current![segment.Name] == null)
                     return;
-                current = current[segment.Name];
+                current = current[segment.Name]!;
             }
         }
 

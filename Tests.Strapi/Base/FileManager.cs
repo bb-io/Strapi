@@ -12,7 +12,8 @@ public class FileManager : IFileManagementClient
     public FileManager()
     {
         var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var projectDirectory = Directory.GetParent(baseDirectory).Parent.Parent.Parent.FullName;
+        var projectDirectory = Directory.GetParent(baseDirectory)?.Parent?.Parent?.Parent?.FullName
+            ?? throw new DirectoryNotFoundException("Project directory not found.");
 
 
         var testFilesPath = Path.Combine(projectDirectory, "TestFiles");
