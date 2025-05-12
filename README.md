@@ -23,6 +23,8 @@ When working with content types, you must explicitly enable localization for spe
 
 This configuration is crucial because without properly localizing fields, any translations uploaded will update content across all languages instead of only the selected language.
 
+![Strapi i18n settings](docs/images/localization_field.png)
+
 ## Before setting up
 
 Before you connect your Strapi instance to Blackbird, make sure you have the following:
