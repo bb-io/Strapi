@@ -20,8 +20,8 @@ public static class HtmlToJsonConverter
         var languageNode = doc.DocumentNode.SelectSingleNode($"//meta[@name='{MetadataKeys.Locale}']");
         if (contentTypeIdNode != null && languageNode != null)
         {
-            var contentId = contentIdNode.GetAttributeValue("content", string.Empty);
-            var contentTypeId = contentTypeIdNode.GetAttributeValue("content", null);
+            var contentId = contentIdNode?.GetAttributeValue("content", null);
+            var contentTypeId = contentTypeIdNode.GetAttributeValue("content", string.Empty);
             var language = languageNode.GetAttributeValue("content", string.Empty);
 
             return new HtmlMetadata(contentId, contentTypeId, language);
