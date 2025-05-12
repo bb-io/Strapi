@@ -86,12 +86,7 @@ public static class JsonToHtmlConverter
                 container.SetAttributeValue("class", "json-object");
                 container.SetAttributeValue("data-json-path", currentPath);
 
-                var heading = doc.CreateElement("h4");
-                heading.InnerHtml = property.Key;
-                container.AppendChild(heading);
-
                 parentNode.AppendChild(container);
-
                 ProcessJsonObject((JObject)property.Value, container, doc, currentPath);
             }
             else if (property.Value?.Type == JTokenType.Array)
@@ -100,32 +95,12 @@ public static class JsonToHtmlConverter
                 container.SetAttributeValue("class", "json-array");
                 container.SetAttributeValue("data-json-path", currentPath);
 
-                var heading = doc.CreateElement("h4");
-                heading.InnerHtml = property.Key;
-                container.AppendChild(heading);
-
                 parentNode.AppendChild(container);
-
                 ProcessJsonArray((JArray)property.Value, container, doc, currentPath);
             }
             else if (property.Value?.Type == JTokenType.String)
             {
-                string value = property.Value.ToString();
-
-                var container = doc.CreateElement("div");
-                container.SetAttributeValue("class", "json-property");
-
-                var label = doc.CreateElement("span");
-                label.SetAttributeValue("class", "property-label");
-                label.InnerHtml = property.Key + ": ";
-                container.AppendChild(label);
-
-                var valueSpan = doc.CreateElement("span");
-                valueSpan.SetAttributeValue("class", "property-value");
-                valueSpan.SetAttributeValue("data-json-path", currentPath);
-                valueSpan.InnerHtml = value;
-                container.AppendChild(valueSpan);
-
+                var container = MarkdownConverter.ToHtml(doc, currentPath, property.Value);
                 parentNode.AppendChild(container);
             }
         }

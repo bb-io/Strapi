@@ -4,6 +4,7 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Diagnostics;
 using System.Web;
 
 namespace Apps.Strapi.Utils.Converters;
@@ -56,6 +57,7 @@ public static class HtmlToJsonConverter
         }
 
         ProcessPropertyValues(doc, jsonObj);
+        ProcessMarkdownContent(doc, jsonObj);
         ProcessRichTextContent(doc, jsonObj);
 
         var dataObj = jsonObj["data"] as JObject;
@@ -90,6 +92,27 @@ public static class HtmlToJsonConverter
             }
 
             UpdateJsonProperty(jsonObj, jsonPath, node.InnerText);
+        }
+    }
+
+    private static void ProcessMarkdownContent(HtmlDocument doc, JObject jsonObj)
+    {
+        var markdownContainers = doc.DocumentNode.SelectNodes("//div[@class='md-rich-text']");
+        if (markdownContainers == null)
+        {
+            return;
+        }
+
+        foreach (var container in markdownContainers)
+        {
+            var jsonPath = container.GetAttributeValue("data-json-path", string.Empty);
+            if (string.IsNullOrEmpty(jsonPath))
+            {
+                continue;
+            }
+
+            var markdownContent = MarkdownConverter.ToMarkdown(container);
+            UpdateJsonProperty(jsonObj, jsonPath, markdownContent);
         }
     }
 
