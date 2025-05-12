@@ -33,12 +33,18 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     }
 
     [Action("Download content", Description = "Downloads a content by ID. By default  it will download the content for published status")]
-    public async Task<FileResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier)
+    public async Task<FileResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier,
+        [ActionParameter] ContentStatusOptionalRequest optionalRequest)
     {
         var request = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
         if(identifier.Language != null)
         {
             request.AddQueryParameter("locale", identifier.Language);
+        }
+
+        if(optionalRequest.Status != null)
+        {
+            request.AddQueryParameter("status", optionalRequest.Status);
         }
 
         var response = await Client.ExecuteWithErrorHandling(request);       
