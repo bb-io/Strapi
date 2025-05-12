@@ -47,8 +47,8 @@ public class ContentActionsTests : TestBase
         // Arrange
         var identifier = new ContentLanguageIdentifier
         {
-            ContentTypeId = "animals",
-            ContentId = "owo7ldexvq0ib6iaa4osf3ez",
+            ContentTypeId = "majors",
+            ContentId = "ll0zpo4ouq4hh4adhd84l8k0",
             Language = "en"
         };
 
@@ -72,7 +72,7 @@ public class ContentActionsTests : TestBase
         {
             File = new FileReference
             {
-                Name = "Lion [French].html",
+                Name = "First.html",
                 ContentType = "text/html"
             },
             TargetLanguage = "fr"

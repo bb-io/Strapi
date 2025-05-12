@@ -18,7 +18,7 @@ public static class JsonToHtmlConverter
             throw new ArgumentException("Invalid JSON structure. Expected 'data' property.");
         }
 
-        var title = dataObj["Name"]?.ToString() ?? dataObj["title"]?.ToString() ?? defaultName;
+        var title = dataObj["Name"]?.ToString() ?? dataObj["Title"]?.ToString() ?? defaultName;
         return title;
     }
 
@@ -169,6 +169,7 @@ public static class JsonToHtmlConverter
             string blockPath = $"{jsonPath}[{i}]";
             string blockType = block["type"]?.ToString() ?? "paragraph";
 
+            // Create the appropriate block element
             HtmlNode blockElement;
             switch (blockType)
             {
@@ -198,59 +199,112 @@ public static class JsonToHtmlConverter
 
             blockElement.SetAttributeValue("data-json-path", blockPath);
 
+            // Process the children of this block
             var children = block["children"] as JArray;
             if (children != null)
             {
-                for (int j = 0; j < children.Count; j++)
-                {
-                    var child = children[j];
-                    string childPath = $"{blockPath}.children[{j}]";
-
-                    if (child["type"]?.ToString() == "text")
-                    {
-                        string text = child["text"]?.ToString() ?? "";
-                        bool isBold = child["bold"]?.ToString() == "true";
-                        bool isItalic = child["italic"]?.ToString() == "true";
-                        bool isUnderline = child["underline"]?.ToString() == "true";
-
-                        HtmlNode textNode = doc.CreateTextNode(text);
-
-                        if (isBold)
-                        {
-                            var strongNode = doc.CreateElement("strong");
-                            strongNode.SetAttributeValue("data-json-path", $"{childPath}.text");
-                            strongNode.AppendChild(textNode);
-                            blockElement.AppendChild(strongNode);
-                        }
-                        else if (isItalic)
-                        {
-                            var emNode = doc.CreateElement("em");
-                            emNode.SetAttributeValue("data-json-path", $"{childPath}.text");
-                            emNode.AppendChild(textNode);
-                            blockElement.AppendChild(emNode);
-                        }
-                        else if (isUnderline)
-                        {
-                            var uNode = doc.CreateElement("u");
-                            uNode.SetAttributeValue("data-json-path", $"{childPath}.text");
-                            uNode.AppendChild(textNode);
-                            blockElement.AppendChild(uNode);
-                        }
-                        else
-                        {
-                            var spanNode = doc.CreateElement("span");
-                            spanNode.SetAttributeValue("data-json-path", $"{childPath}.text");
-                            spanNode.AppendChild(textNode);
-                            blockElement.AppendChild(spanNode);
-                        }
-                    }
-                }
+                ProcessRichTextChildren(children, blockElement, doc, blockPath);
             }
 
             richTextContainer.AppendChild(blockElement);
         }
 
         parentNode.AppendChild(richTextContainer);
+    }
+
+    private static void ProcessRichTextChildren(JArray children, HtmlNode parentNode, HtmlDocument doc, string parentPath)
+    {
+        for (int j = 0; j < children.Count; j++)
+        {
+            var child = children[j] as JObject;
+            if (child == null) continue;
+
+            string childPath = $"{parentPath}.children[{j}]";
+            string childType = child["type"]?.ToString() ?? "";
+
+            if (childType == "text")
+            {
+                string text = child["text"]?.ToString() ?? "";
+                bool isBold = child["bold"]?.ToObject<bool>() ?? false;
+                bool isItalic = child["italic"]?.ToObject<bool>() ?? false;
+                bool isUnderline = child["underline"]?.ToObject<bool>() ?? false;
+
+                HtmlNode textNode = doc.CreateTextNode(text);
+                HtmlNode formattedNode;
+
+                if (isBold)
+                {
+                    formattedNode = doc.CreateElement("strong");
+                }
+                else if (isItalic)
+                {
+                    formattedNode = doc.CreateElement("em");
+                }
+                else if (isUnderline)
+                {
+                    formattedNode = doc.CreateElement("u");
+                }
+                else
+                {
+                    formattedNode = doc.CreateElement("span");
+                }
+
+                formattedNode.SetAttributeValue("data-json-path", $"{childPath}.text");
+                formattedNode.AppendChild(textNode);
+                parentNode.AppendChild(formattedNode);
+            }
+            else if (childType == "list-item")
+            {
+                // For list items found as children of lists
+                var listItemNode = doc.CreateElement("li");
+                listItemNode.SetAttributeValue("data-json-path", childPath);
+
+                // Process the children of this list item
+                var listItemChildren = child["children"] as JArray;
+                if (listItemChildren != null)
+                {
+                    ProcessRichTextChildren(listItemChildren, listItemNode, doc, childPath);
+                }
+
+                parentNode.AppendChild(listItemNode);
+            }
+            else
+            {
+                // Handle other potential block types recursively
+                var nestedChildren = child["children"] as JArray;
+                if (nestedChildren != null)
+                {
+                    // Create appropriate element based on child type
+                    HtmlNode nestedElement;
+                    switch (childType)
+                    {
+                        case "heading":
+                            int level = int.Parse(child["level"]?.ToString() ?? "1");
+                            nestedElement = doc.CreateElement("h" + Math.Min(Math.Max(level, 1), 6));
+                            break;
+                        case "list":
+                            nestedElement = doc.CreateElement(child["format"]?.ToString() == "ordered" ? "ol" : "ul");
+                            break;
+                        case "code":
+                            nestedElement = doc.CreateElement("pre");
+                            var codeBlock = doc.CreateElement("code");
+                            nestedElement.AppendChild(codeBlock);
+                            nestedElement = codeBlock;
+                            break;
+                        case "quote":
+                            nestedElement = doc.CreateElement("blockquote");
+                            break;
+                        default:
+                            nestedElement = doc.CreateElement("div");
+                            break;
+                    }
+
+                    nestedElement.SetAttributeValue("data-json-path", childPath);
+                    ProcessRichTextChildren(nestedChildren, nestedElement, doc, childPath);
+                    parentNode.AppendChild(nestedElement);
+                }
+            }
+        }
     }
 
     private static string AppendJsonPath(string basePath, string propertyName)

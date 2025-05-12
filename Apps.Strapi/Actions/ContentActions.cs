@@ -32,7 +32,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         return new(result);
     }
 
-    [Action("Download content", Description = "Downloads a content by ID.")]
+    [Action("Download content", Description = "Downloads a content by ID. By default  it will download the content for published status")]
     public async Task<FileResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier)
     {
         var request = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
@@ -43,8 +43,10 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
 
         var response = await Client.ExecuteWithErrorHandling(request);       
         var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId);
-        var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlString));
-        memoryStream.Position = 0;
+        var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlString))
+        {
+            Position = 0
+        };
 
         var title = JsonToHtmlConverter.ExtractTitle(response.Content!, identifier.ContentId);
         var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{title}.html");

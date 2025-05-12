@@ -165,11 +165,53 @@ public static class HtmlToJsonConverter
             int level = int.Parse(blockNode.Name.Substring(1));
             blockJson["level"] = level;
         }
+        else if (blockType == "list")
+        {
+            // Add format property for lists based on the tag
+            blockJson["format"] = blockNode.Name == "ul" ? "unordered" : "ordered";
+        }
 
         var children = new JArray();
-        foreach (var childNode in blockNode.ChildNodes)
+        
+        if (blockType == "list")
         {
-            if (childNode.NodeType == HtmlNodeType.Element)
+            // Process list items for lists
+            foreach (var listItemNode in blockNode.ChildNodes.Where(n => n.NodeType == HtmlNodeType.Element))
+            {
+                var listItemJson = new JObject
+                {
+                    ["type"] = "list-item"
+                };
+                
+                var listItemChildren = new JArray();
+                
+                foreach (var textNode in listItemNode.ChildNodes.Where(n => n.NodeType == HtmlNodeType.Element))
+                {
+                    var textJson = new JObject
+                    {
+                        ["type"] = "text",
+                        ["text"] = textNode.InnerText
+                    };
+                    
+                    // Add formatting properties if needed
+                    if (textNode.Name == "strong" || textNode.ParentNode.Name == "strong")
+                        textJson["bold"] = true;
+                    if (textNode.Name == "em" || textNode.ParentNode.Name == "em")
+                        textJson["italic"] = true;
+                    if (textNode.Name == "u" || textNode.ParentNode.Name == "u")
+                        textJson["underline"] = true;
+                    
+                    listItemChildren.Add(textJson);
+                }
+                
+                listItemJson["children"] = listItemChildren;
+                children.Add(listItemJson);
+            }
+        }
+        else
+        {
+            // Process regular blocks (paragraphs, headings, etc.)
+            foreach (var childNode in blockNode.ChildNodes.Where(n => n.NodeType == HtmlNodeType.Element))
             {
                 var textChild = new JObject();
                 textChild["type"] = "text";
@@ -235,7 +277,7 @@ public static class HtmlToJsonConverter
                 if (current[segment.Name] is JArray array && array.Count > segment.Index)
                     current = array[segment.Index];
                 else
-                    return; 
+                    return;
             }
             else
             {

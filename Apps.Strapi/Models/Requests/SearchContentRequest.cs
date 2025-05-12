@@ -8,8 +8,8 @@ namespace Apps.Strapi.Models.Requests;
 public class SearchContentRequest : ContentTypeIdentifier
 {
     [Display("Language", Description = "The language of the content"), StaticDataSource(typeof(LanguageDataHandler))]
-    public string Language { get; set; } = string.Empty;
+    public string? Language { get; set; }
 
     [Display("Status", Description = "The status of the content"), StaticDataSource(typeof(StatusDataHandler))]
-    public string Status { get; set; } = string.Empty;
+    public string? Status { get; set; }
 }
