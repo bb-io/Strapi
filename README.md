@@ -45,6 +45,8 @@ Before you connect your Strapi instance to Blackbird, make sure you have the fol
 
 ![connection](docs/images/connection.png)
 
+> Please note that if the connection is successfully created, it doesn't necessarily mean it is valid. At this stage, we only check whether the base URL exists — we cannot validate the API token. You can verify that the connection is fully valid only within the Bird, using actions or events.
+
 ## Actions
 
 - **Search content**: Returns a list of content based on specified inputs. Only for collection types content types.
@@ -64,6 +66,12 @@ Here's a simple example of how to use the Strapi app in a Blackbird workflow:
 ![example](docs/images/example.png)
 
 This bird is triggered when a content is published in Strapi. It then downloads the content, translates it using a `DeepL` app, and finally uploads the translated content back to Strapi.
+
+## Known Limitations
+
+There is no way to retrieve a list of content types from the API, so it's not possible to provide a dropdown list for the **Content type ID** input. Unfortunately, it's the client’s responsibility to enter the content types manually as plain text.
+
+You can get the content type ID from the Strapi UI. Typically, multiple content types will look like: `'users'`, `'articles'`, `'pages'`, and so on.
 
 ## Feedback
 
