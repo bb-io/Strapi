@@ -57,6 +57,14 @@ Before you connect your Strapi instance to Blackbird, make sure you have the fol
 - **On content created or updated**: Polling event that periodically checks for new or updated content. Returns a list of content items if new or updated content is found.
 - **On content published**: Polling event that periodically checks for newly published content. Returns a list of content items if newly published content is found.
 
+## Example
+
+Here's a simple example of how to use the Strapi app in a Blackbird workflow:
+
+![example](docs/images/example.png)
+
+This bird is triggered when a content is published in Strapi. It then downloads the content, translates it using a `DeepL` app, and finally uploads the translated content back to Strapi.
+
 ## Feedback
 
 Do you want to use this app or do you have feedback on our implementation? Reach out to us using the [established channels](https://www.blackbird.io/) or create an issue.
