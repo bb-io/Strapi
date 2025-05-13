@@ -1,5 +1,6 @@
 using Apps.Strapi.Connections;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.Strapi.Base;
 
 namespace Tests.Strapi;

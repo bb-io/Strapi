@@ -6,20 +6,28 @@ namespace Apps.Strapi.Connections;
 
 public class ConnectionDefinition : IConnectionDefinition
 {
-    public IEnumerable<ConnectionPropertyGroup> ConnectionPropertyGroups => new List<ConnectionPropertyGroup>
-    {
+    public IEnumerable<ConnectionPropertyGroup> ConnectionPropertyGroups =>
+    [
         new()
         {
             Name = "Developer API key",
             AuthenticationType = ConnectionAuthenticationType.Undefined,
-            ConnectionProperties = new List<ConnectionProperty>
-            {
-                new(CredsNames.Token) { DisplayName = "API Token", Sensitive = true}
-            }
+            ConnectionProperties =
+            [
+                new(CredNames.BaseUrl)
+                {
+                    DisplayName = "Base URL",
+                    Sensitive = false
+                },
+                new(CredNames.ApiToken) 
+                { 
+                    DisplayName = "API Token", 
+                    Sensitive = true
+                }
+            ]
         }
-    };
-
+    ];
+    
     public IEnumerable<AuthenticationCredentialsProvider> CreateAuthorizationCredentialsProviders(
-        Dictionary<string, string> values) => values.Select(x => new AuthenticationCredentialsProvider(x.Key, x.Value)
-        ).ToList();
+        Dictionary<string, string> values) => values.Select(x => new AuthenticationCredentialsProvider(x.Key, x.Value)).ToList();
 }

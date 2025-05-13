@@ -7,12 +7,13 @@ namespace Apps.Strapi;
 
 public class Invocable : BaseInvocable
 {
-    protected AuthenticationCredentialsProvider[] Creds =>
+    protected AuthenticationCredentialsProvider[] Credentials =>
         InvocationContext.AuthenticationCredentialsProviders.ToArray();
 
-    protected Client Client { get; }
+    protected StrapiClient Client { get; }
+
     public Invocable(InvocationContext invocationContext) : base(invocationContext)
     {
-        Client = new(Creds);
+        Client = new(Credentials);
     }
 }
