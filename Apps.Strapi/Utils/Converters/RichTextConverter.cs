@@ -59,14 +59,31 @@ public static class RichTextConverter
         
         foreach (var node in parentNode.ChildNodes.Where(n => n.NodeType == HtmlNodeType.Element))
         {
-            var textJson = new JObject
+            if (node.Name == "a")
             {
-                ["type"] = "text",
-                ["text"] = node.InnerText
-            };
-            
-            ApplyTextFormatting(textJson, node);
-            textNodes.Add(textJson);
+                var linkJson = new JObject
+                {
+                    ["type"] = "link",
+                    ["url"] = node.GetAttributeValue("href", ""),
+                    ["children"] = new JArray(new JObject
+                    {
+                        ["type"] = "text",
+                        ["text"] = node.InnerText
+                    })
+                };
+                textNodes.Add(linkJson);
+            }
+            else
+            {
+                var textJson = new JObject
+                {
+                    ["type"] = "text",
+                    ["text"] = node.InnerText
+                };
+                
+                ApplyTextFormatting(textJson, node);
+                textNodes.Add(textJson);
+            }
         }
         
         return textNodes;
@@ -82,6 +99,9 @@ public static class RichTextConverter
             
         if (HasStyle(node, "u"))
             textJson["underline"] = true;
+            
+        if (HasStyle(node, "code"))
+            textJson["code"] = true;
     }
     
     private static bool HasStyle(HtmlNode node, string style)

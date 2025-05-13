@@ -12,7 +12,7 @@ public class HtmlToJsonConverterTests : TestBase
     public async Task ConvertToJson_ValidHtml_ReturnsExpectedJson()
     {
         // Arrange
-        var file = await FileManager.DownloadAsync(new() { Name = "First.html" });
+        var file = await FileManager.DownloadAsync(new() { Name = "Blackbird 1.html" });
         var memoryStream = new MemoryStream();
         await file.CopyToAsync(memoryStream);
         memoryStream.Position = 0;

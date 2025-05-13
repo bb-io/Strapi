@@ -200,7 +200,15 @@ public static class JsonToHtmlConverter
                 
             case "quote":
                 return CreateElement(doc, "blockquote");
-                
+
+            case "link":
+                var linkElement = CreateElement(doc, "a");
+                if(blockData["url"] != null)
+                {
+                    linkElement.SetAttributeValue("href", blockData["url"]?.ToString() ?? "#");
+                }
+                return linkElement;
+
             default:
                 return CreateElement(doc, "p");
         }

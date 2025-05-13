@@ -47,13 +47,13 @@ public class ContentActionsTests : TestBase
         // Arrange
         var identifier = new ContentLanguageIdentifier
         {
-            ContentTypeId = "global",
-            ContentId = null,
+            ContentTypeId = "animals",
+            ContentId = "z5osh0jclqbti3zuo47ej7sb",
             Language = "en"
         };
 
         // Act
-        var response = await _contentActions!.DownloadContentAsync(identifier);
+        var response = await _contentActions!.DownloadContentAsync(identifier, new());
 
         // Assert
         Assert.IsNotNull(response);
@@ -72,7 +72,7 @@ public class ContentActionsTests : TestBase
         {
             File = new FileReference
             {
-                Name = "global.html",
+                Name = "Blackbird 1.html",
                 ContentType = "text/html"
             },
             TargetLanguage = "fr"

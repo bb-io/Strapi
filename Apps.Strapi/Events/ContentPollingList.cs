@@ -20,7 +20,7 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
             apiRequest.AddQueryParameter("filters[$or][1][updatedAt][$gte]", lastPollingTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
         });
     }
-    
+
     [PollingEvent("On content published", Description = "Polling event that periodically checks for newly published content. If newly published content is found, it will be returned as a list of content items.")]
     public async Task<PollingEventResponse<DateMemory, SearchContentResponse>> OnContentPublishedAsync(PollingEventRequest<DateMemory> request,
         [PollingEventParameter] ContentFilters contentRequest)
