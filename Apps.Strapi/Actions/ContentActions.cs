@@ -38,6 +38,8 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     public async Task<FileResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier,
         [ActionParameter] ContentStatusOptionalRequest optionalRequest)
     {
+        ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentTypeId, "Content type ID");
+
         var request = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
         if(identifier.Language != null)
         {

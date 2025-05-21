@@ -29,6 +29,7 @@ public static class JsonToHtmlConverter
 
         if (dataObj == null)
         {
+            ExceptionExtensions.ThrowIfNullOrEmpty(contentId, "Content ID");
             throw new ArgumentException("Invalid JSON structure. Expected 'data' property.");
         }
 
