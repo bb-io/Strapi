@@ -1,4 +1,5 @@
 using Apps.Strapi.Models.Identifiers;
+using Apps.Strapi.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -12,36 +13,18 @@ public class ContentDataHandler(InvocationContext invocationContext, [ActionPara
 {
     public async Task<IEnumerable<DataSourceItem>> GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
     {
-        if(string.IsNullOrEmpty(identifier.ContentTypeId))
+        if (string.IsNullOrEmpty(identifier.ContentTypeId))
         {
             throw new Exception("You must provide a Content type ID first to fetch the content IDs.");
         }
 
         var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}");
         var result = await Client.PaginateAsync<JObject>(apiRequest);
-        
-        var searchString = context.SearchString;
-        return result
-            .Where(x => x["documentId"]?.ToString() != null)
-            .Select(x => {
-                string id = x["documentId"]!.ToString();
-                return new DataSourceItem(id, GetContentName(x, id));
-            })
-            .Where(x => searchString == null || 
-                  x.DisplayName.Contains(searchString, StringComparison.OrdinalIgnoreCase));
-    }
+        var documents = result.ToContentListResponse();
 
-    private string GetContentName(JObject content, string defaultValue)
-    {
-        foreach (var property in content.Properties())
-        {
-            if (property.Name.Equals("name", StringComparison.OrdinalIgnoreCase) ||
-                property.Name.Equals("title", StringComparison.OrdinalIgnoreCase))
-            {
-                return property.Value.ToString() ?? defaultValue;
-            }
-        }
-
-        return defaultValue;
+        return documents
+            .Where(x => x.DocumentId != null && x.Title != null)
+            .Where(x => context.SearchString == null || x.Title!.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
+            .Select(x => new DataSourceItem(x.DocumentId!, x.Title!));
     }
 }
