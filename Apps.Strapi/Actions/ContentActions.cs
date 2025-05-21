@@ -1,12 +1,14 @@
 using Apps.Strapi.Models.Identifiers;
 using Apps.Strapi.Models.Requests;
 using Apps.Strapi.Models.Responses;
+using Apps.Strapi.Utils;
 using Apps.Strapi.Utils.Converters;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Models.Responses;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 
 namespace Apps.Strapi.Actions;
@@ -28,8 +30,8 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             apiRequest.AddQueryParameter("status", request.Status);
         }
 
-        var result = await Client.PaginateAsync<DocumentResponse>(apiRequest);
-        return new(result);
+        var result = await Client.PaginateAsync<JObject>(apiRequest);
+        return new(result.ToContentListResponse());
     }
 
     [Action("Download content", Description = "Downloads a content by ID. By default  it will download the content for published status")]
