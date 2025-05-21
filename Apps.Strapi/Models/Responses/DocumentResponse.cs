@@ -7,6 +7,9 @@ public class DocumentResponse
     [Display("Content ID")]
     public string? DocumentId { get; set; }
 
+    [Display("Title")]
+    public string? Title { get; set; }
+
     [Display("Created at")]
     public DateTime CreatedAt { get; set; }
 

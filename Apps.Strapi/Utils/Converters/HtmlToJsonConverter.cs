@@ -73,12 +73,28 @@ public static class HtmlToJsonConverter
             }
         }
 
+        // Move properties from attributes to root level
+        if (dataObj.ContainsKey("attributes") && dataObj["attributes"] is JObject attributesObj)
+        {
+            // Copy only localizable attributes to the root level
+            foreach (var property in attributesObj.Properties())
+            {
+                if (!JsonProperties.NonLocalizableProperties.Contains(property.Name))
+                {
+                    dataObj[property.Name] = property.Value;
+                }
+            }
+
+            // Remove the attributes property
+            dataObj.Remove("attributes");
+        }
+
         return JsonConvert.SerializeObject(new { data = dataObj });
     }
 
     private static void ProcessPropertyValues(HtmlDocument doc, JObject jsonObj)
     {
-        var propertyValueNodes = doc.DocumentNode.SelectNodes("//span[@class='property-value']");
+        var propertyValueNodes = doc.DocumentNode.SelectNodes("//span[@class='property-value'] | //div[@class='property-value']");
         if (propertyValueNodes == null)
             return;
 
@@ -90,7 +106,15 @@ public static class HtmlToJsonConverter
                 continue;
             }
 
-            UpdateJsonProperty(jsonObj, jsonPath, node.InnerText);
+            var isHtmlContent = node.GetAttributeValue("data-html", string.Empty);
+            if (isHtmlContent == "true")
+            {
+                UpdateJsonProperty(jsonObj, jsonPath, node.InnerHtml);
+            }
+            else
+            {
+                UpdateJsonProperty(jsonObj, jsonPath, node.InnerText);
+            }
         }
     }
 

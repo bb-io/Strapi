@@ -1,12 +1,14 @@
 using Apps.Strapi.Models.Identifiers;
 using Apps.Strapi.Models.Requests;
 using Apps.Strapi.Models.Responses;
+using Apps.Strapi.Utils;
 using Apps.Strapi.Utils.Converters;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Models.Responses;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 
 namespace Apps.Strapi.Actions;
@@ -28,14 +30,17 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             apiRequest.AddQueryParameter("status", request.Status);
         }
 
-        var result = await Client.PaginateAsync<DocumentResponse>(apiRequest);
-        return new(result);
+        var result = await Client.PaginateAsync<JObject>(apiRequest);
+        return new(result.ToContentListResponse());
     }
 
     [Action("Download content", Description = "Downloads a content by ID. By default  it will download the content for published status")]
     public async Task<FileResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier,
-        [ActionParameter] ContentStatusOptionalRequest optionalRequest)
+        [ActionParameter] ContentStatusOptionalRequest optionalRequest,
+        [ActionParameter] DownloadContentRequest downloadContentRequest)
     {
+        ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentTypeId, "Content type ID");
+
         var request = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
         if(identifier.Language != null)
         {
@@ -48,7 +53,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
 
         var response = await Client.ExecuteWithErrorHandling(request);       
-        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId);
+        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId, downloadContentRequest.ExcludeFields);
         var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlString))
         {
             Position = 0

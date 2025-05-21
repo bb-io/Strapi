@@ -1,8 +1,9 @@
 using Apps.Strapi.Events.Models;
 using Apps.Strapi.Models.Responses;
+using Apps.Strapi.Utils;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
-using Models.Responses;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 
 namespace Apps.Strapi.Events;
@@ -50,10 +51,11 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
         var apiRequest = BuildBaseApiRequest(contentRequest);
         addFilters.Invoke(apiRequest, request.Memory.LastPollingTime);
 
-        var result = await Client.PaginateAsync<DocumentResponse>(apiRequest);
+        var result = await Client.PaginateAsync<JObject>(apiRequest);
+        var contentList = result.ToContentListResponse();
         return new()
         {
-            Result = new(result),
+            Result = new(contentList),
             FlyBird = result.Count > 0,
             Memory = new DateMemory
             {

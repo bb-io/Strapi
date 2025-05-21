@@ -22,20 +22,21 @@ public static class JsonToHtmlConverter
         return title;
     }
 
-    public static string ConvertToHtml(string json, string? contentId, string contentType)
+    public static string ConvertToHtml(string json, string? contentId, string contentType, IEnumerable<string>? nonLocalizableFields)
     {
         var jsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
         var dataObj = jsonObj["data"] as JObject;
 
         if (dataObj == null)
         {
+            ExceptionExtensions.ThrowIfNullOrEmpty(contentId, "Content ID");
             throw new ArgumentException("Invalid JSON structure. Expected 'data' property.");
         }
 
         var doc = new HtmlDocument();
         CreateHtmlStructure(doc, jsonObj, dataObj, contentId, contentType);
-        
-        ProcessJsonObject(dataObj, doc.DocumentNode.SelectSingleNode("//body"), doc, "data");
+
+        ProcessJsonObject(dataObj, doc.DocumentNode.SelectSingleNode("//body"), doc, "data", nonLocalizableFields);
         return "<!DOCTYPE html>\n" + doc.DocumentNode.OuterHtml;
     }
 
@@ -48,11 +49,11 @@ public static class JsonToHtmlConverter
         htmlNode.AppendChild(headNode);
 
         AddMetaTag(doc, headNode, "charset", "UTF-8");
-        if(!string.IsNullOrEmpty(contentId))
+        if (!string.IsNullOrEmpty(contentId))
         {
             AddMetaTag(doc, headNode, MetadataKeys.ContentId, contentId);
         }
-        
+
         AddMetaTag(doc, headNode, MetadataKeys.ContentType, contentType);
 
         string locale = dataObj["locale"]?.ToString() ?? "en";
@@ -66,7 +67,7 @@ public static class JsonToHtmlConverter
     private static void AddMetaTag(HtmlDocument doc, HtmlNode parentNode, string name, string content)
     {
         var metaTag = CreateElement(doc, "meta");
-        
+
         if (name == "charset")
             metaTag.SetAttributeValue(name, content);
         else
@@ -74,17 +75,17 @@ public static class JsonToHtmlConverter
             metaTag.SetAttributeValue("name", name);
             metaTag.SetAttributeValue("content", content);
         }
-        
+
         parentNode.AppendChild(metaTag);
     }
 
-    private static void ProcessJsonObject(JObject jsonObj, HtmlNode parentNode, HtmlDocument doc, string jsonPath)
+    private static void ProcessJsonObject(JObject jsonObj, HtmlNode parentNode, HtmlDocument doc, string jsonPath, IEnumerable<string>? nonLocalizableFields)
     {
         foreach (var property in jsonObj.Properties())
         {
             string currentPath = AppendJsonPath(jsonPath, property.Name);
 
-            if (JsonProperties.NonLocalizableProperties.Contains(property.Name))
+            if (JsonProperties.NonLocalizableProperties.Contains(property.Name) || nonLocalizableFields?.Contains(property.Path) == true)
             {
                 continue;
             }
@@ -93,23 +94,46 @@ public static class JsonToHtmlConverter
             {
                 var container = CreateContainerElement(doc, "div", "json-object", currentPath);
                 parentNode.AppendChild(container);
-                ProcessJsonObject((JObject)property.Value, container, doc, currentPath);
+                ProcessJsonObject((JObject)property.Value, container, doc, currentPath, nonLocalizableFields);
             }
             else if (property.Value?.Type == JTokenType.Array)
             {
                 var container = CreateContainerElement(doc, "div", "json-array", currentPath);
                 parentNode.AppendChild(container);
-                ProcessJsonArray((JArray)property.Value, container, doc, currentPath);
+                ProcessJsonArray((JArray)property.Value, container, doc, currentPath, nonLocalizableFields);
             }
             else if (property.Value?.Type == JTokenType.String)
             {
-                var container = MarkdownConverter.ToHtml(doc, currentPath, property.Value);
-                parentNode.AppendChild(container);
+                if (IsHtmlConvent(property.Value.ToString()))
+                {
+                    var content = property.Value.ToString();
+                    var valueDiv = doc.CreateElement("div");
+                    valueDiv.SetAttributeValue("class", "property-value");
+                    valueDiv.SetAttributeValue("data-json-path", currentPath);
+                    valueDiv.SetAttributeValue("data-html", "true");
+                    valueDiv.InnerHtml = content;
+                    parentNode.AppendChild(valueDiv);
+                }
+                else
+                {
+                    var container = MarkdownConverter.ToHtml(doc, currentPath, property.Value);
+                    parentNode.AppendChild(container);
+                }
             }
         }
     }
 
-    private static void ProcessJsonArray(JArray array, HtmlNode parentNode, HtmlDocument doc, string jsonPath)
+    private static bool IsHtmlConvent(string content)
+    {
+        return content.Contains("<p") && content.Contains("/p>") ||
+               content.Contains("<div") && content.Contains("/div>") ||
+               content.Contains("<span") && content.Contains("/span>") ||
+               content.Contains("<strong") && content.Contains("/strong>") ||
+               content.Contains("<em") && content.Contains("/em>") ||
+               content.Contains("<u") && content.Contains("/u>");
+    }
+
+    private static void ProcessJsonArray(JArray array, HtmlNode parentNode, HtmlDocument doc, string jsonPath, IEnumerable<string>? nonLocalizableFields)
     {
         if (IsRichTextEditorData(array))
         {
@@ -127,11 +151,11 @@ public static class JsonToHtmlConverter
 
             if (item.Type == JTokenType.Object)
             {
-                ProcessJsonObject((JObject)item, itemContainer, doc, itemPath);
+                ProcessJsonObject((JObject)item, itemContainer, doc, itemPath, nonLocalizableFields);
             }
             else if (item.Type == JTokenType.Array)
             {
-                ProcessJsonArray((JArray)item, itemContainer, doc, itemPath);
+                ProcessJsonArray((JArray)item, itemContainer, doc, itemPath, nonLocalizableFields);
             }
             else if (item.Type == JTokenType.String)
             {
@@ -147,9 +171,9 @@ public static class JsonToHtmlConverter
     {
         if (array.Count == 0) return false;
 
-        return array.All(item => 
-            item.Type == JTokenType.Object && 
-            ((JObject)item)["type"] != null && 
+        return array.All(item =>
+            item.Type == JTokenType.Object &&
+            ((JObject)item)["type"] != null &&
             ((JObject)item)["children"] != null);
     }
 
@@ -185,25 +209,25 @@ public static class JsonToHtmlConverter
             case "heading":
                 int level = int.Parse(blockData["level"]?.ToString() ?? "1");
                 return CreateElement(doc, "h" + Math.Min(Math.Max(level, 1), 6));
-                
+
             case "list":
                 return CreateElement(doc, blockData["format"]?.ToString() == "ordered" ? "ol" : "ul");
-                
+
             case "list-item":
                 return CreateElement(doc, "li");
-                
+
             case "code":
                 var preElement = CreateElement(doc, "pre");
                 var codeElement = CreateElement(doc, "code");
                 preElement.AppendChild(codeElement);
                 return preElement;
-                
+
             case "quote":
                 return CreateElement(doc, "blockquote");
 
             case "link":
                 var linkElement = CreateElement(doc, "a");
-                if(blockData["url"] != null)
+                if (blockData["url"] != null)
                 {
                     linkElement.SetAttributeValue("href", blockData["url"]?.ToString() ?? "#");
                 }
