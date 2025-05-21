@@ -36,7 +36,8 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
 
     [Action("Download content", Description = "Downloads a content by ID. By default  it will download the content for published status")]
     public async Task<FileResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier,
-        [ActionParameter] ContentStatusOptionalRequest optionalRequest)
+        [ActionParameter] ContentStatusOptionalRequest optionalRequest,
+        [ActionParameter] DownloadContentRequest downloadContentRequest)
     {
         ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentTypeId, "Content type ID");
 
@@ -52,7 +53,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
 
         var response = await Client.ExecuteWithErrorHandling(request);       
-        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId);
+        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId, downloadContentRequest.ExcludeFields);
         var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlString))
         {
             Position = 0
