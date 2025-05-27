@@ -1,3 +1,4 @@
+using Apps.Strapi.Constants;
 using Apps.Strapi.Utils.Converters;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
@@ -20,7 +21,7 @@ public class HtmlToJsonConverterTests : TestBase
         var html = Encoding.UTF8.GetString(memoryStream.ToArray());
 
         // Act
-        string jsonResult = HtmlToJsonConverter.ConvertToJson(html);
+        string jsonResult = HtmlToJsonConverter.ConvertToJson(html, StrapiVersions.V5, "de");
         
         Console.WriteLine("Successfully converted HTML back to JSON:");
         Console.WriteLine(jsonResult);

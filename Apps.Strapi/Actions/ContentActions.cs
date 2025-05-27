@@ -1,3 +1,4 @@
+using Apps.Strapi.Constants;
 using Apps.Strapi.Models.Identifiers;
 using Apps.Strapi.Models.Requests;
 using Apps.Strapi.Models.Responses;
@@ -5,6 +6,7 @@ using Apps.Strapi.Utils;
 using Apps.Strapi.Utils.Converters;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Models.Responses;
@@ -20,12 +22,12 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     public async Task<SearchContentResponse> SearchContentAsync([ActionParameter] SearchContentRequest request)
     {
         var apiRequest = new RestRequest($"/api/{request.ContentTypeId}");
-        if(request.Language != null)
+        if (request.Language != null)
         {
             apiRequest.AddQueryParameter("locale", request.Language);
         }
 
-        if(request.Status != null)
+        if (request.Status != null)
         {
             apiRequest.AddQueryParameter("status", request.Status);
         }
@@ -42,17 +44,17 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentTypeId, "Content type ID");
 
         var request = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
-        if(identifier.Language != null)
+        if (identifier.Language != null)
         {
             request.AddQueryParameter("locale", identifier.Language);
         }
 
-        if(optionalRequest.Status != null)
+        if (optionalRequest.Status != null)
         {
             request.AddQueryParameter("status", optionalRequest.Status);
         }
 
-        var response = await Client.ExecuteWithErrorHandling(request);       
+        var response = await Client.ExecuteWithErrorHandling(request);
         var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId, downloadContentRequest.ExcludeFields);
         var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlString))
         {
@@ -63,11 +65,18 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{title}.html");
 
         return new(fileReference);
-    }    
-    
+    }
+
     [Action("Upload content", Description = "Uploads a HTML file to a specific language to localize the content.")]
-    public async Task UploadContentAsync([ActionParameter] UploadContentRequest request)
+    public async Task<DocumentResponse> UploadContentAsync([ActionParameter] UploadContentRequest request)
     {
+        var strapiVersion = request.StrapiVersion ?? "v5";
+        if (!StrapiVersions.AllVersions.Contains(strapiVersion))
+        {
+            var supportedVersions = string.Join(", ", StrapiVersions.AllVersions);
+            throw new PluginMisconfigurationException($"Unsupported Strapi version '{strapiVersion}'. Supported versions are: {supportedVersions}.");
+        }
+
         var fileStream = await fileManagementClient.DownloadAsync(request.File);
         var memoryStream = new MemoryStream();
         await fileStream.CopyToAsync(memoryStream);
@@ -75,19 +84,36 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
 
         var htmlString = System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
         var metadata = HtmlToJsonConverter.ExtractMetadata(htmlString);
-        var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString);
+        var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString, strapiVersion, request.TargetLanguage);
 
         var endpoint = $"/api/{metadata.ContentTypeId}";
-        if(!string.IsNullOrEmpty(metadata.ContentId))
+        if (StrapiVersions.V5 == strapiVersion)
         {
-            endpoint += $"/{metadata.ContentId}";
+            if (!string.IsNullOrEmpty(metadata.ContentId))
+            {
+                endpoint += $"/{metadata.ContentId}";
+            }
+
+            var apiRequest = new RestRequest(endpoint, Method.Put)
+                .AddQueryParameter("locale", request.TargetLanguage)
+                .AddBody(jsonContent, ContentType.Json);
+
+            var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+            return jObject.ToFullContentResponse();
         }
+        else if (StrapiVersions.V4 == strapiVersion)
+        {
+            var apiRequest = new RestRequest(endpoint, Method.Post)
+                .AddQueryParameter("locale", request.TargetLanguage)
+                .AddBody(jsonContent, ContentType.Json);
 
-        var apiRequest = new RestRequest(endpoint, Method.Put)
-            .AddQueryParameter("locale", request.TargetLanguage)
-            .AddBody(jsonContent, ContentType.Json);
-
-        await Client.ExecuteWithErrorHandling(apiRequest);
+            var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+            return jObject.ToFullContentResponse();
+        }
+        else
+        {
+            throw new PluginMisconfigurationException($"Operation not supported yet for Strapi version '{strapiVersion}'. Ask blackbird support to implement it.");
+        }
     }
 
     [Action("Delete content", Description = "Deletes a content by ID.")]

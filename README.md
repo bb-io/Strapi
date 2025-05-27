@@ -51,7 +51,7 @@ Before you connect your Strapi instance to Blackbird, make sure you have the fol
 
 - **Search content**: Returns a list of content based on specified inputs. Only for collection types content types.
 - **Download content**: Downloads content by ID as an HTML file. By default, downloads the published version.
-- **Upload content**: Uploads an HTML file to localize content for a specific language.
+- **Upload content**: Uploads an HTML file to localize content for a specific language. This action has an optional `Strapi version` input to specify which version of the content to update (default is the v5). If you are using Strapi v4, you can set the `Strapi version` input to `v4` to ensure compatibility.
 - **Delete content**: Deletes content by ID.
 
 ## Events
