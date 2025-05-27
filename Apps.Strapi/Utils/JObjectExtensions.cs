@@ -22,6 +22,20 @@ public static class JObjectExtensions
         return ParseContentObject(jObject);
     }
     
+    public static DocumentResponse ToFullContentResponse(this JObject jObject)
+    {
+        if (jObject["data"] != null)
+        {
+            var dataObject = jObject["data"] as JObject;
+            if (dataObject != null)
+            {
+                return dataObject.ToContentResponse();
+            }
+        }
+        
+        return jObject.ToContentResponse();
+    }
+    
     private static DocumentResponse ParseContentObject(JObject contentObject)
     {
         var response = new DocumentResponse();
