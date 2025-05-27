@@ -13,6 +13,6 @@ public class UploadContentRequest
     [Display("Target language", Description = "The target language to upload the content to."), StaticDataSource(typeof(LanguageDataHandler))]
     public string TargetLanguage { get; set; } = string.Empty;
 
-    [Display("Strapi version", Description = "The version of Strapi to use for the upload."), StaticDataSource(typeof(StrapiVersionDataHandler))]
+    [Display("Strapi version", Description = "The version of Strapi to use for the upload. By default we will use version 5."), StaticDataSource(typeof(StrapiVersionDataHandler))]
     public string? StrapiVersion { get; set; }
 }
