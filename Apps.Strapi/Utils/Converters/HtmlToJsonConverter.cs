@@ -90,6 +90,11 @@ public static class HtmlToJsonConverter
             }
         }
 
+        if (strapiVersion == StrapiVersions.V4)
+        {
+            return JsonConvert.SerializeObject(dataObj);
+        }
+        
         return JsonConvert.SerializeObject(new { data = dataObj });
     }
 

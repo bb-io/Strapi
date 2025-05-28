@@ -8,6 +8,7 @@ using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Models.Responses;
 using Newtonsoft.Json.Linq;
@@ -87,13 +88,13 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString, strapiVersion, request.TargetLanguage);
 
         var endpoint = $"/api/{metadata.ContentTypeId}";
+        if (!string.IsNullOrEmpty(metadata.ContentId))
+        {
+            endpoint += $"/{metadata.ContentId}";
+        }
+
         if (StrapiVersions.V5 == strapiVersion)
         {
-            if (!string.IsNullOrEmpty(metadata.ContentId))
-            {
-                endpoint += $"/{metadata.ContentId}";
-            }
-
             var apiRequest = new RestRequest(endpoint, Method.Put)
                 .AddQueryParameter("locale", request.TargetLanguage)
                 .AddBody(jsonContent, ContentType.Json);
@@ -103,12 +104,12 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
         else if (StrapiVersions.V4 == strapiVersion)
         {
+            endpoint += "/localizations";
             var apiRequest = new RestRequest(endpoint, Method.Post)
-                .AddQueryParameter("locale", request.TargetLanguage)
-                .AddBody(jsonContent, ContentType.Json);
+                .AddStringBody(jsonContent, ContentType.Json);
 
             var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            return jObject.ToFullContentResponse();
+            return jObject.ToContentResponse();
         }
         else
         {
