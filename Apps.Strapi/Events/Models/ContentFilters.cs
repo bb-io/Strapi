@@ -17,7 +17,7 @@ public class ContentFilters
     [Display("Status", Description = "The status of the content"), StaticDataSource(typeof(StatusDataHandler))]
     public string? Status { get; set; }
 
-    [Display("Field paths", Description = "The fields to filter the content by. If not specified, all fields will be returned."), DataSource(typeof(StringFieldPathDataHandler))]
+    [Display("Field names", Description = "The names of the fields to filter the content by. Use dot notation for nested fields.")]
     public IEnumerable<string>? FieldPaths { get; set; }
 
     [Display("Field values", Description = "The values of the fields to filter the content by.")]
