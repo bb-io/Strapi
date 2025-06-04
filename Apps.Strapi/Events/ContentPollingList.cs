@@ -3,6 +3,7 @@ using Apps.Strapi.Models.Responses;
 using Apps.Strapi.Utils;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
+using Models.Responses;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 
@@ -48,15 +49,28 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
             };
         }
 
-        var apiRequest = BuildBaseApiRequest(contentRequest);
-        addFilters.Invoke(apiRequest, request.Memory.LastPollingTime);
+        var contentList = new List<DocumentResponse>();
+        foreach (var contentTypeId in contentRequest.ContentTypeIds)
+        {
+            try
+            {
+                var apiRequest = BuildBaseApiRequest(contentTypeId, contentRequest);
+                addFilters.Invoke(apiRequest, request.Memory.LastPollingTime);
 
-        var result = await Client.PaginateAsync<JObject>(apiRequest);
-        var contentList = result.ToContentListResponse();
+                var result = await Client.PaginateAsync<JObject>(apiRequest);
+                var currentContentList = result.ToContentListResponse();
+                contentList.AddRange(currentContentList);
+            }
+            catch (Exception ex)
+            {
+                InvocationContext.Logger?.LogError($"[Strapi] Error while polling content for content type ID '{contentTypeId}': {ex.Message}", []);
+            }
+        }
+
         return new()
         {
             Result = new(contentList),
-            FlyBird = result.Count > 0,
+            FlyBird = contentList.Count > 0,
             Memory = new DateMemory
             {
                 LastPollingTime = DateTime.UtcNow
@@ -64,9 +78,9 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
         };
     }
 
-    private RestRequest BuildBaseApiRequest(ContentFilters contentRequest)
+    private RestRequest BuildBaseApiRequest(string contentTypeId, ContentFilters contentRequest)
     {
-        var apiRequest = new RestRequest($"/api/{contentRequest.ContentTypeId}");
+        var apiRequest = new RestRequest($"/api/{contentTypeId}");
 
         if (contentRequest.Language != null)
         {
@@ -78,6 +92,7 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
             apiRequest.AddQueryParameter("status", contentRequest.Status);
         }
 
+        QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, contentRequest.FieldNames, contentRequest.FieldValues);
         return apiRequest;
     }
 }

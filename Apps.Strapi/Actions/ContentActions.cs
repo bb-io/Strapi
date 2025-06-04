@@ -8,7 +8,6 @@ using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
-using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Models.Responses;
 using Newtonsoft.Json.Linq;
@@ -33,8 +32,31 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             apiRequest.AddQueryParameter("status", request.Status);
         }
 
+        QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, request.FieldNames, request.FieldValues);
+
         var result = await Client.PaginateAsync<JObject>(apiRequest);
         return new(result.ToContentListResponse());
+    }
+
+    [Action("Get text field value", Description = "Returns a text field value from a content by ID.")]
+    public async Task<StringResponse> GetTextFieldValueAsync([ActionParameter] ContentIdentifier identifier,
+        [ActionParameter] GetTextFieldValueRequest request)
+    {
+        ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentTypeId, "Content type ID");
+        ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentId, "Content ID");
+        ExceptionExtensions.ThrowIfNullOrEmpty(request.FieldPath, "Field path");
+
+        var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
+        var response = await Client.ExecuteWithErrorHandling(apiRequest);
+        var content = response.Content;
+        if (content == null)
+        {
+            throw new PluginMisconfigurationException("Content not found or empty.");
+        }
+
+        var jObject = JObject.Parse(content);
+        var value = jObject.SelectToken(request.FieldPath)?.ToString() ?? string.Empty;
+        return new StringResponse(value);
     }
 
     [Action("Download content", Description = "Downloads a content by ID. By default  it will download the content for published status")]

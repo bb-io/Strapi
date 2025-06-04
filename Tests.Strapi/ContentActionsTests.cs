@@ -25,8 +25,7 @@ public class ContentActionsTests : TestBase
     {
         var request = new SearchContentRequest
         {
-            ContentTypeId = "",
-            Language = "en"
+            ContentTypeId = "animals"
         };
 
         var response = await _contentActions!.SearchContentAsync(request);
@@ -35,8 +34,25 @@ public class ContentActionsTests : TestBase
         Assert.IsTrue(response.Content.Count > 0);
         
         Console.WriteLine($"Total count: {response.TotalCount}");
-        var first3Documents = response.Content.Take(3).ToList();
+        var first3Documents = response.Content.Where(x => x.Title.Contains("Test - do not publish"));
         Console.WriteLine(JsonConvert.SerializeObject(first3Documents, Formatting.Indented));
+    }
+
+    [TestMethod]
+    public async Task SearchContentAsync_RequestWithFieldFilter_ReturnsContent()
+    {
+        var request = new SearchContentRequest
+        {
+            ContentTypeId = "animals",
+            FieldNames = ["data.attributes.translation"],
+            FieldValues = ["Human Translation"]
+        };
+
+        var response = await _contentActions!.SearchContentAsync(request);
+
+        Assert.IsNotNull(response);
+        Assert.IsTrue(response.Content.Count > 0);
+        Console.WriteLine($"Total count: {response.TotalCount}");
     }
 
     [TestMethod]
@@ -45,8 +61,8 @@ public class ContentActionsTests : TestBase
         // Arrange
         var identifier = new ContentLanguageIdentifier
         {
-            ContentTypeId = "",
-            ContentId = "10",
+            ContentTypeId = "animals",
+            ContentId = "1",
             Language = "en"
         };
 
@@ -93,14 +109,38 @@ public class ContentActionsTests : TestBase
         {
             File = new FileReference
             {
-                Name = "test.html",
+                Name = "animals.html",
                 ContentType = "text/html"
             },
-            TargetLanguage = "de"
+            TargetLanguage = "de",
+            StrapiVersion = "v4"
         };
 
         // Act & Assert
-        await _contentActions!.UploadContentAsync(request);
+        var result = await _contentActions!.UploadContentAsync(request);
         Console.WriteLine($"Successfully uploaded content from {request.File.Name} to language {request.TargetLanguage}");
+        Console.WriteLine(JsonConvert.SerializeObject(result, Formatting.Indented));
+    }
+
+    [TestMethod]
+    public async Task GetTextFieldValueAsync_ValidRequest_ReturnsFieldValue()
+    {
+        // Arrange
+        var identifier = new ContentIdentifier
+        {
+            ContentTypeId = "animals",
+            ContentId = "6"
+        };
+        var request = new GetTextFieldValueRequest
+        {
+            FieldPath = "data.attributes.translation"
+        };
+
+        // Act
+        var response = await _contentActions!.GetTextFieldValueAsync(identifier, request);
+
+        // Assert
+        Assert.IsNotNull(response.Value);
+        Console.WriteLine($"Field value: {response.Value}");
     }
 }
