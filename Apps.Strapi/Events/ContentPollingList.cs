@@ -52,12 +52,19 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
         var contentList = new List<DocumentResponse>();
         foreach (var contentTypeId in contentRequest.ContentTypeIds)
         {
-            var apiRequest = BuildBaseApiRequest(contentTypeId, contentRequest);
-            addFilters.Invoke(apiRequest, request.Memory.LastPollingTime);
+            try
+            {
+                var apiRequest = BuildBaseApiRequest(contentTypeId, contentRequest);
+                addFilters.Invoke(apiRequest, request.Memory.LastPollingTime);
 
-            var result = await Client.PaginateAsync<JObject>(apiRequest);
-            var currentContentList = result.ToContentListResponse();
-            contentList.AddRange(currentContentList);
+                var result = await Client.PaginateAsync<JObject>(apiRequest);
+                var currentContentList = result.ToContentListResponse();
+                contentList.AddRange(currentContentList);
+            }
+            catch (Exception ex)
+            {
+                InvocationContext.Logger?.LogError($"[Strapi] Error while polling content for content type ID '{contentTypeId}': {ex.Message}", []);
+            }
         }
 
         return new()
