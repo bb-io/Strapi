@@ -85,6 +85,7 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
             apiRequest.AddQueryParameter("status", contentRequest.Status);
         }
 
+        QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, contentRequest.FieldPaths, contentRequest.FieldValues);
         return apiRequest;
     }
 }

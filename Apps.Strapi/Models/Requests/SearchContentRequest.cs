@@ -14,4 +14,10 @@ public class SearchContentRequest : ContentTypeIdentifier
 
     [Display("Status", Description = "The status of the content"), StaticDataSource(typeof(StatusDataHandler))]
     public string? Status { get; set; }
+
+    [Display("Field paths", Description = "The fields to filter the content by. If not specified, all fields will be returned."), DataSource(typeof(StringFieldPathDataHandler))]
+    public IEnumerable<string>? FieldPaths { get; set; }
+
+    [Display("Field values", Description = "The values of the fields to filter the content by.")]
+    public IEnumerable<string>? FieldValues { get; set; }
 }

@@ -39,6 +39,23 @@ public class ContentActionsTests : TestBase
     }
 
     [TestMethod]
+    public async Task SearchContentAsync_RequestWithFieldFilter_ReturnsContent()
+    {
+        var request = new SearchContentRequest
+        {
+            ContentTypeId = "animals",
+            FieldPaths = ["data.attributes.translation"],
+            FieldValues = ["Human Translation"]
+        };
+
+        var response = await _contentActions!.SearchContentAsync(request);
+
+        Assert.IsNotNull(response);
+        Assert.IsTrue(response.Content.Count > 0);
+        Console.WriteLine($"Total count: {response.TotalCount}");
+    }
+
+    [TestMethod]
     public async Task DownloadContentAsync_ValidRequest_ReturnsFileReference()
     {
         // Arrange
