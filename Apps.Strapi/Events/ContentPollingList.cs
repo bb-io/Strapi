@@ -13,7 +13,7 @@ namespace Apps.Strapi.Events;
 public class ContentPollingList(InvocationContext invocationContext) : Invocable(invocationContext)
 {
     [PollingEvent("On content created or updated", Description = "Polling event that periodically checks for new new or updated content. If the new or updated content is found, it will be returned as a list of content items.")]
-    public async Task<PollingEventResponse<DateMemory, SearchContentResponse>> OnContentCreatedOrUpdatedAsync(PollingEventRequest<DateMemory> request,
+    public async Task<PollingEventResponse<DateMemory, SearchContentWithTypeResponse>> OnContentCreatedOrUpdatedAsync(PollingEventRequest<DateMemory> request,
         [PollingEventParameter] ContentFilters contentRequest)
     {
         return await ProcessPollingRequest(request, contentRequest, (apiRequest, lastPollingTime) =>
@@ -24,14 +24,14 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
     }
 
     [PollingEvent("On content published", Description = "Polling event that periodically checks for newly published content. If newly published content is found, it will be returned as a list of content items.")]
-    public async Task<PollingEventResponse<DateMemory, SearchContentResponse>> OnContentPublishedAsync(PollingEventRequest<DateMemory> request,
+    public async Task<PollingEventResponse<DateMemory, SearchContentWithTypeResponse>> OnContentPublishedAsync(PollingEventRequest<DateMemory> request,
         [PollingEventParameter] ContentFilters contentRequest)
     {
         return await ProcessPollingRequest(request, contentRequest, (apiRequest, lastPollingTime) =>
             apiRequest.AddQueryParameter("filters[$or][0][publishedAt][$gte]", lastPollingTime.ToString("yyyy-MM-ddTHH:mm:ssZ")));
     }
 
-    private async Task<PollingEventResponse<DateMemory, SearchContentResponse>> ProcessPollingRequest(
+    private async Task<PollingEventResponse<DateMemory, SearchContentWithTypeResponse>> ProcessPollingRequest(
         PollingEventRequest<DateMemory> request,
         ContentFilters contentRequest,
         Action<RestRequest, DateTime> addFilters)
@@ -49,7 +49,7 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
             };
         }
 
-        var contentList = new List<DocumentResponse>();
+        var contentList = new List<DocumentWithContentTypeResponse>();
         foreach (var contentTypeId in contentRequest.ContentTypeIds)
         {
             try
@@ -59,7 +59,11 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
 
                 var result = await Client.PaginateAsync<JObject>(apiRequest);
                 var currentContentList = result.ToContentListResponse();
-                contentList.AddRange(currentContentList);
+                var contentListWithType = currentContentList
+                    .Select(content => new DocumentWithContentTypeResponse(content, contentTypeId))
+                    .ToList();
+
+                contentList.AddRange(contentListWithType);
             }
             catch (Exception ex)
             {
