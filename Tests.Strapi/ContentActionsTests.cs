@@ -44,7 +44,7 @@ public class ContentActionsTests : TestBase
         var request = new SearchContentRequest
         {
             ContentTypeId = "animals",
-            FieldPaths = ["data.attributes.translation"],
+            FieldNames = ["data.attributes.translation"],
             FieldValues = ["Human Translation"]
         };
 

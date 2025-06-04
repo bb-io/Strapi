@@ -32,7 +32,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             apiRequest.AddQueryParameter("status", request.Status);
         }
 
-        QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, request.FieldPaths, request.FieldValues);
+        QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, request.FieldNames, request.FieldValues);
 
         var result = await Client.PaginateAsync<JObject>(apiRequest);
         return new(result.ToContentListResponse());
