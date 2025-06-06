@@ -34,7 +34,7 @@ public class ContentActionsTests : TestBase
         Assert.IsTrue(response.Content.Count > 0);
         
         Console.WriteLine($"Total count: {response.TotalCount}");
-        var first3Documents = response.Content.Where(x => x.Title.Contains("Test - do not publish"));
+        var first3Documents = response.Content.Where(x => x.Title!.Contains("Test - do not publish"));
         Console.WriteLine(JsonConvert.SerializeObject(first3Documents, Formatting.Indented));
     }
 
@@ -142,5 +142,29 @@ public class ContentActionsTests : TestBase
         // Assert
         Assert.IsNotNull(response.Value);
         Console.WriteLine($"Field value: {response.Value}");
+    }
+
+    [TestMethod]
+    public async Task GetMissingLocalesAsync_ValidRequest_ReturnsMissingLocales()
+    {
+        // Arrange
+        var identifier = new GetMissingLocalesRequest
+        {
+            ContentTypeId = "article",
+            ContentId = "9",
+            StrapiVersion = "v4"
+        };
+
+        // Act
+        var response = await _contentActions!.GetMissingLocalesAsync(identifier);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.IsNotNull(response.MissingLocales);
+        Assert.IsTrue(response.MissingLocales.Count > 0);
+        
+        // Output for debugging
+        Console.WriteLine($"Missing locales count: {response.MissingLocales.Count}");
+        Console.WriteLine($"Missing locales: {JsonConvert.SerializeObject(response, Formatting.Indented)}");
     }
 }

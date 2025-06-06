@@ -1,5 +1,7 @@
+using Apps.Strapi.Models.Responses;
 using Models.Responses;
 using Newtonsoft.Json.Linq;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Strapi.Utils;
 
@@ -21,6 +23,48 @@ public static class JObjectExtensions
     {
         return ParseContentObject(jObject);
     }
+
+    public static DocumentWithLocalizationsResponse ToContentWithLocalizationsResponse(this JObject jObject)
+    {
+        var documentResponse = ParseContentObject(jObject);
+        var result = new DocumentWithLocalizationsResponse(documentResponse);
+        
+        JObject contentObject = jObject;
+        if (jObject["data"] != null && jObject["data"]!.Type == JTokenType.Object)
+        {
+            contentObject = jObject["data"] as JObject ?? throw new Exception("Failed to parse content data from response.");
+        }
+        
+        if (contentObject == null)
+        {
+            throw new PluginApplicationException("Failed to find content data in response.");
+        }
+        
+        var localizationsToken = GetCaseInsensitiveValue(contentObject, "localizations");
+        if (localizationsToken == null)
+        {
+            throw new PluginApplicationException(
+                "Localizations property not found. Please verify your Strapi version - by default this action assumes v5, but you might be using v4.");
+        }
+        
+        if (localizationsToken.Type == JTokenType.Array)
+        {
+            var localizationsArray = localizationsToken as JArray;
+            if (localizationsArray != null)
+            {
+                foreach (var item in localizationsArray)
+                {
+                    if (item.Type == JTokenType.Object)
+                    {
+                        var localization = ParseContentObject((item as JObject)!);
+                        result.Localizations.Add(localization);
+                    }
+                }
+            }
+        }
+        
+        return result;
+    }
     
     public static DocumentResponse ToFullContentResponse(this JObject jObject)
     {
@@ -32,7 +76,7 @@ public static class JObjectExtensions
                 return dataObject.ToContentResponse();
             }
         }
-        
+
         return jObject.ToContentResponse();
     }
     
