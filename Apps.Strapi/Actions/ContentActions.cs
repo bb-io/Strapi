@@ -39,7 +39,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         return new(result.ToContentListResponse());
     }
 
-    [Action("Get missing localizations", Description = "Returns a list of languages that haven't been localized yet for the specified content.")]
+    [Action("Get missing localization languages", Description = "Returns a list of languages that haven't been localized yet for the specified content.")]
     public async Task<MissingLocalesResponse> GetMissingLocalesAsync([ActionParameter] GetMissingLocalesRequest request)
     {
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentTypeId, "Content type ID");
