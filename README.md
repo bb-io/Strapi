@@ -71,6 +71,12 @@ Here's a simple example of how to use the Strapi app in a Blackbird workflow:
 
 This bird is triggered when a content is published in Strapi. It then downloads the content, translates it using a `DeepL` app, and finally uploads the translated content back to Strapi.
 
+## Known Limitations
+
+There is no way to retrieve a list of content types from the API, so it's not possible to provide a dropdown list for the **Content type ID** input. Unfortunately, it's the client’s responsibility to enter the content types manually as plain text.
+
+You can get the content type ID from the Strapi UI. Typically, multiple content types will look like: `'users'`, `'articles'`, `'pages'`, and so on.
+
 ## Feedback
 
 Do you want to use this app or do you have feedback on our implementation? Reach out to us using the [established channels](https://www.blackbird.io/) or create an issue.
