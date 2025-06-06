@@ -31,6 +31,7 @@ Before you connect your Strapi instance to Blackbird, make sure you have the fol
 
 - A Strapi instance running on a public accessible URL. 
 - API token for the Strapi instance. You can create an API token in the Strapi Settings > API Tokens section. Make sure to give the token the necessary permissions to access the content you want to use in Blackbird. Typically we reommend using the 'Full access' token type. Also, setup the token duration to be 'Unlimited' to avoid having to update the token in Blackbird every time it expires.
+- Installed the `i18n` plugin in your Strapi instance. This is required for localization support.
 
 ## Connecting
 
@@ -44,6 +45,8 @@ Before you connect your Strapi instance to Blackbird, make sure you have the fol
 6. Confirm that the connection has appeared and the status is _Connected_
 
 ![connection](docs/images/connection.png)
+
+> Connection validation is done by fetching the all available locales from the Strapi instance using `/api/i18n/locales` endpoint. So, it's necessary to have the `i18n` plugin installed and configured in your Strapi instance.
 
 ## Actions
 
