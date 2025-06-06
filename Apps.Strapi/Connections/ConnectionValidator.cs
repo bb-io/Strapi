@@ -14,22 +14,10 @@ public class ConnectionValidator : IConnectionValidator
         try
         {
             var client = new StrapiClient(authenticationCredentialsProviders);
-            var result = await client.ExecuteAsync(new RestRequest("/api"));
-            
-            if (result.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                var errorDto = JsonConvert.DeserializeObject<ErrorDto>(result.Content!)!;
-                var isValid = errorDto.Error.Status == 404 && errorDto.Error.Name == "NotFoundError";
-                return new()
-                {
-                    IsValid = isValid,
-                    Message = isValid ? "It's not possible to check if the api token is valid, but at least the URL is correct" : result.Content
-                };
-            }
-
+            var result = await client.ExecuteWithErrorHandling(new RestRequest("/api/i18n/locales"));
             return new()
             {
-                IsValid = false,
+                IsValid = true,
                 Message = result.Content
             };
         }
@@ -41,6 +29,5 @@ public class ConnectionValidator : IConnectionValidator
                 Message = ex.Message
             };
         }
-
     }
 }

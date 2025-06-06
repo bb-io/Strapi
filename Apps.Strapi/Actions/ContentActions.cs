@@ -1,4 +1,5 @@
 using Apps.Strapi.Constants;
+using Apps.Strapi.Models.Dtos;
 using Apps.Strapi.Models.Identifiers;
 using Apps.Strapi.Models.Requests;
 using Apps.Strapi.Models.Responses;
@@ -36,6 +37,35 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
 
         var result = await Client.PaginateAsync<JObject>(apiRequest);
         return new(result.ToContentListResponse());
+    }
+
+    [Action("Get missing localization languages", Description = "Returns a list of languages that haven't been localized yet for the specified content.")]
+    public async Task<MissingLocalesResponse> GetMissingLocalesAsync([ActionParameter] GetMissingLocalesRequest request)
+    {
+        ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentTypeId, "Content type ID");
+        ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentId, "Content ID");
+
+        var languages = await GetAllAvailableLanguagesAsync();
+        var targetLocales = languages.Select(l => l.Code).ToList();
+        if (request.StrapiVersion == StrapiVersions.V4)
+        {
+            var response = await GetLocalizationObjectsAsync(request, request.StrapiVersion);
+            var locales = MissingLocalesResponse.GetLocalesFromJObject(response, request.ContentTypeId);
+            var missingLocales = MissingLocalesResponse.GetMissingLocales(locales, targetLocales);
+            return new MissingLocalesResponse(missingLocales, locales);
+        }
+        else
+        {
+            var content = await GetLocalizationObjectsAsync(request);
+            if (content.Localizations == null || content.Localizations.Count == 0)
+            {
+                return new MissingLocalesResponse(targetLocales, new List<string>());
+            }
+
+            var locales = content.Localizations.Select(l => l.Locale).ToList();
+            var missingLocales = MissingLocalesResponse.GetMissingLocales(locales!, targetLocales);
+            return new MissingLocalesResponse(missingLocales, locales!);
+        }
     }
 
     [Action("Get text field value", Description = "Returns a text field value from a content by ID.")]
@@ -144,5 +174,44 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}", Method.Delete);
         await Client.ExecuteWithErrorHandling(apiRequest);
+    }
+
+    private async Task<DocumentWithLocalizationsResponse> GetLocalizationObjectsAsync(GetMissingLocalesRequest request)
+    {
+        try
+        {
+            var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}")
+                .AddQueryParameter("populate", "localizations");
+            var response = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+            return response.ToContentWithLocalizationsResponse();
+        }
+        catch (Exception ex)
+        {
+            throw new PluginApplicationException($"Error: {ex.Message}. If you're using Strapi v4, specify this in the 'Strapi version' field", ex);
+        }
+    }
+
+    private async Task<JObject> GetLocalizationObjectsAsync(GetMissingLocalesRequest identifier, string locale)
+    {
+        try
+        {
+            var graphQlRequest = new RestRequest("/graphql", Method.Post)
+            .AddJsonBody(new
+            {
+                query = GraphQlQueries.GetLocalizationObjectsForContentQuery(identifier.ContentTypeId, identifier.ContentId!)
+            });
+
+            return await Client.ExecuteWithErrorHandling<JObject>(graphQlRequest);
+        }
+        catch (Exception ex)
+        {
+            throw new PluginApplicationException("Failed to retrieve localization objects through the GraphQL API. Please, verify that graphQL plugin is installed and enabled in your Strapi instance.", ex);
+        }
+    }
+
+    private async Task<List<LanguageDto>> GetAllAvailableLanguagesAsync()
+    {
+        var apiRequest = new RestRequest("/api/i18n/locales");
+        return await Client.ExecuteWithErrorHandling<List<LanguageDto>>(apiRequest);
     }
 }

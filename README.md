@@ -31,6 +31,7 @@ Before you connect your Strapi instance to Blackbird, make sure you have the fol
 
 - A Strapi instance running on a public accessible URL. 
 - API token for the Strapi instance. You can create an API token in the Strapi Settings > API Tokens section. Make sure to give the token the necessary permissions to access the content you want to use in Blackbird. Typically we reommend using the 'Full access' token type. Also, setup the token duration to be 'Unlimited' to avoid having to update the token in Blackbird every time it expires.
+- Installed the `i18n` plugin in your Strapi instance. This is required for localization support.
 
 ## Connecting
 
@@ -45,12 +46,15 @@ Before you connect your Strapi instance to Blackbird, make sure you have the fol
 
 ![connection](docs/images/connection.png)
 
-> Please note that if the connection is successfully created, it doesn't necessarily mean it is valid. At this stage, we only check whether the base URL exists — we cannot validate the API token. You can verify that the connection is fully valid only within the Bird, using actions or events.
+> Connection validation is done by fetching the all available locales from the Strapi instance using `/api/i18n/locales` endpoint. So, it's necessary to have the `i18n` plugin installed and configured in your Strapi instance.
 
 ## Actions
 
 - **Search content**: Returns a list of content based on specified inputs. Only for collection types content types.
 - **Download content**: Downloads content by ID as an HTML file. By default, downloads the published version.
+- **Get missing localization languages**: Returns a list of languages that haven't been localized yet for the specified content. If you are using Strapi v4 it's necessary to specify the `Strapi version` input as `v4` to ensure compatibility and install the [`graphql` plugin](https://docs-v4.strapi.io/dev-docs/plugins/graphql) in your Strapi instance. The `Strapi version` input is optional and defaults to `v5`.
+> Note, if you are using Strapi v4 you must provide sinfular content type, e.g., `article` instead of `articles`. This is required for compatibility with the Strapi graphql plugin.
+- **Get text field value**: Returns a text field value from a content by ID.
 - **Upload content**: Uploads an HTML file to localize content for a specific language. This action has an optional `Strapi version` input to specify which version of the content to update (default is the v5). If you are using Strapi v4, you can set the `Strapi version` input to `v4` to ensure compatibility.
 - **Delete content**: Deletes content by ID.
 
