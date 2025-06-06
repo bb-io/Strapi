@@ -52,7 +52,7 @@ Before you connect your Strapi instance to Blackbird, make sure you have the fol
 
 - **Search content**: Returns a list of content based on specified inputs. Only for collection types content types.
 - **Download content**: Downloads content by ID as an HTML file. By default, downloads the published version.
-- **Get missing localizations**: Returns a list of languages that haven't been localized yet for the specified content. If you are using Strapi v4 it's necessary to specify the `Strapi version` input as `v4` to ensure compatibility and install the [`graphql` plugin](https://docs-v4.strapi.io/dev-docs/plugins/graphql) in your Strapi instance. The `Strapi version` input is optional and defaults to `v5`.
+- **Get missing localization languages**: Returns a list of languages that haven't been localized yet for the specified content. If you are using Strapi v4 it's necessary to specify the `Strapi version` input as `v4` to ensure compatibility and install the [`graphql` plugin](https://docs-v4.strapi.io/dev-docs/plugins/graphql) in your Strapi instance. The `Strapi version` input is optional and defaults to `v5`.
 > Note, if you are using Strapi v4 you must provide sinfular content type, e.g., `article` instead of `articles`. This is required for compatibility with the Strapi graphql plugin.
 - **Get text field value**: Returns a text field value from a content by ID.
 - **Upload content**: Uploads an HTML file to localize content for a specific language. This action has an optional `Strapi version` input to specify which version of the content to update (default is the v5). If you are using Strapi v4, you can set the `Strapi version` input to `v4` to ensure compatibility.
