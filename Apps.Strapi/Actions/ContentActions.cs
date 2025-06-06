@@ -56,10 +56,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
         else
         {
-            var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}")
-                .AddQueryParameter("populate", "localizations");
-            var response = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            var content = response.ToContentWithLocalizationsResponse();
+            var content = await GetLocalizationObjectsAsync(request);
             if (content.Localizations == null || content.Localizations.Count == 0)
             {
                 return new MissingLocalesResponse(targetLocales, new List<string>());
@@ -177,6 +174,21 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}", Method.Delete);
         await Client.ExecuteWithErrorHandling(apiRequest);
+    }
+
+    private async Task<DocumentWithLocalizationsResponse> GetLocalizationObjectsAsync(GetMissingLocalesRequest request)
+    {
+        try
+        {
+            var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}")
+                .AddQueryParameter("populate", "localizations");
+            var response = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+            return response.ToContentWithLocalizationsResponse();
+        }
+        catch (Exception ex)
+        {
+            throw new PluginApplicationException($"Error: {ex.Message}. If you're using Strapi v4, specify this in the 'Strapi version' field", ex);
+        }
     }
 
     private async Task<JObject> GetLocalizationObjectsAsync(GetMissingLocalesRequest identifier, string locale)
