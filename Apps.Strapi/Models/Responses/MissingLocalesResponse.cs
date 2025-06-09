@@ -18,16 +18,22 @@ public class MissingLocalesResponse(IEnumerable<string> missingLocales, IEnumera
 
         try
         {
+            var locale = jObject["data"]?[contentType]?["data"]?["attributes"]?["locale"]?.ToString();
+            if (!string.IsNullOrEmpty(locale))
+            {
+                locales.Add(locale);
+            }
+
             var localizationsData = jObject["data"]?[contentType]?["data"]?["attributes"]?["localizations"]?["data"];
 
             if (localizationsData != null && localizationsData.Type == JTokenType.Array)
             {
                 foreach (var item in localizationsData)
                 {
-                    var locale = item["attributes"]?["locale"]?.ToString();
-                    if (!string.IsNullOrEmpty(locale))
+                    var currentLocale = item["attributes"]?["locale"]?.ToString();
+                    if (!string.IsNullOrEmpty(currentLocale))
                     {
-                        locales.Add(locale);
+                        locales.Add(currentLocale);
                     }
                 }
             }
@@ -37,7 +43,7 @@ public class MissingLocalesResponse(IEnumerable<string> missingLocales, IEnumera
             throw new PluginApplicationException("Failed to extract locales from the provided JSON object. Please, ask Blackbird support for further investigation", ex);
         }
 
-        return locales;
+        return locales.Distinct().ToList();
     }
 
     public static List<string> GetMissingLocales(IEnumerable<string> existingLocales, IEnumerable<string> targetLocales)
