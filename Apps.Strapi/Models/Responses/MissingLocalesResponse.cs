@@ -18,7 +18,7 @@ public class MissingLocalesResponse(IEnumerable<string> missingLocales, IEnumera
 
         try
         {
-            var locale = jObject["data"]?["attributes"]?["locale"]?.ToString();
+            var locale = jObject["data"]?[contentType]?["data"]?["attributes"]?["locale"]?.ToString();
             if (!string.IsNullOrEmpty(locale))
             {
                 locales.Add(locale);

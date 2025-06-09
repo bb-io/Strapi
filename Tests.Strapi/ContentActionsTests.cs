@@ -151,7 +151,7 @@ public class ContentActionsTests : TestBase
         var identifier = new GetMissingLocalesRequest
         {
             ContentTypeId = "article",
-            ContentId = "9",
+            ContentId = "181",
             StrapiVersion = "v4"
         };
 

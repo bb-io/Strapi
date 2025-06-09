@@ -49,20 +49,25 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var targetLocales = languages.Select(l => l.Code).ToList();
         if (request.StrapiVersion == StrapiVersions.V4)
         {
-            var response = await GetLocalizationObjectsAsync(request, request.StrapiVersion);
+            var response = await GetLocalizationObjectsV4Async(request, request.StrapiVersion);
             var locales = MissingLocalesResponse.GetLocalesFromJObject(response, request.ContentTypeId);
             var missingLocales = MissingLocalesResponse.GetMissingLocales(locales, targetLocales);
             return new MissingLocalesResponse(missingLocales, locales);
         }
         else
         {
-            var content = await GetLocalizationObjectsAsync(request);
+            var content = await GetLocalizationObjectsV5Async(request);
             if (content.Localizations == null || content.Localizations.Count == 0)
             {
                 return new MissingLocalesResponse(targetLocales, new List<string>());
             }
 
             var locales = content.Localizations.Select(l => l.Locale).ToList();
+            if (!string.IsNullOrEmpty(content.Locale))
+            {
+                locales.Add(content.Locale);
+            }
+            
             var missingLocales = MissingLocalesResponse.GetMissingLocales(locales!, targetLocales);
             return new MissingLocalesResponse(missingLocales, locales!);
         }
@@ -176,7 +181,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         await Client.ExecuteWithErrorHandling(apiRequest);
     }
 
-    private async Task<DocumentWithLocalizationsResponse> GetLocalizationObjectsAsync(GetMissingLocalesRequest request)
+    private async Task<DocumentWithLocalizationsResponse> GetLocalizationObjectsV5Async(GetMissingLocalesRequest request)
     {
         try
         {
@@ -191,7 +196,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
     }
 
-    private async Task<JObject> GetLocalizationObjectsAsync(GetMissingLocalesRequest identifier, string locale)
+    private async Task<JObject> GetLocalizationObjectsV4Async(GetMissingLocalesRequest identifier, string locale)
     {
         try
         {

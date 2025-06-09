@@ -6,11 +6,11 @@ public class GraphQlQueries
         {contentType}(id: ""{contentId}"") {
             data {
                 attributes {
+                    locale
                     localizations {
                         data {
                             id
                             attributes {
-                                title
                                 locale
                             }
                         }
