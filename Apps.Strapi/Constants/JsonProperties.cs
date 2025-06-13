@@ -4,6 +4,6 @@ public static class JsonProperties
 {
     public static readonly HashSet<string> NonLocalizableProperties = new(StringComparer.OrdinalIgnoreCase)
     {
-        "id", "documentId", "createdAt", "updatedAt", "publishedAt", "locale"
+        "id", "documentId", "createdAt", "updatedAt", "locale"
     };
 }
