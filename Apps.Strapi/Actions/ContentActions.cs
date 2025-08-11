@@ -45,6 +45,11 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentTypeId, "Content type ID");
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentId, "Content ID");
 
+        if(request.ContentTypeId.EndsWith("s"))
+        {
+            request.ContentTypeId = request.ContentTypeId[..^1];
+        }
+
         var languages = await GetAllAvailableLanguagesAsync();
         var targetLocales = languages.Select(l => l.Code).ToList();
         if (request.StrapiVersion == StrapiVersions.V4)
@@ -200,11 +205,12 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         try
         {
+            var query = GraphQlQueries.GetLocalizationObjectsForContentQuery(identifier.ContentTypeId, identifier.ContentId!);
             var graphQlRequest = new RestRequest("/graphql", Method.Post)
-            .AddJsonBody(new
-            {
-                query = GraphQlQueries.GetLocalizationObjectsForContentQuery(identifier.ContentTypeId, identifier.ContentId!)
-            });
+                .AddJsonBody(new
+                {
+                    query
+                });
 
             return await Client.ExecuteWithErrorHandling<JObject>(graphQlRequest);
         }
