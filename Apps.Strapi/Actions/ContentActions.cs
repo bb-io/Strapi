@@ -95,7 +95,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     }
 
     [Action("Download content", Description = "Downloads a content by ID. By default  it will download the content for published status")]
-    public async Task<FileResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier,
+    public async Task<DownloadContentResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier,
         [ActionParameter] ContentStatusOptionalRequest optionalRequest,
         [ActionParameter] DownloadContentRequest downloadContentRequest)
     {
@@ -121,8 +121,8 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
 
         var title = JsonToHtmlConverter.ExtractTitle(response.Content!, identifier.ContentId ?? identifier.ContentTypeId);
         var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{title}.html");
-
-        return new(fileReference);
+        
+        return new(fileReference, identifier.ContentTypeId);
     }
 
     [Action("Upload content", Description = "Uploads a HTML file to a specific language to localize the content.")]
