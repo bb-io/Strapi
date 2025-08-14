@@ -58,7 +58,7 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
                 addFilters.Invoke(apiRequest, request.Memory.LastPollingTime);
 
                 var result = await Client.PaginateAsync<JObject>(apiRequest);
-                var currentContentList = result.ToContentListResponse();
+                var currentContentList = result.ToContentListResponse(contentTypeId);
                 var contentListWithType = currentContentList
                     .Select(content => new DocumentWithContentTypeResponse(content, contentTypeId))
                     .ToList();

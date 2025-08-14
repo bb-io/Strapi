@@ -39,7 +39,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, request.FieldNames, request.FieldValues);
 
             var result = await Client.PaginateAsync<JObject>(apiRequest);
-            allDocuments.AddRange(result.ToContentListResponse());
+            allDocuments.AddRange(result.ToContentListResponse(contentTypeId));
         }
 
         return new(allDocuments);
@@ -168,7 +168,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
                 .AddBody(jsonContent, ContentType.Json);
 
             var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            return jObject.ToFullContentResponse();
+            return jObject.ToFullContentResponse(metadata.ContentTypeId);
         }
         else if (StrapiVersions.V4 == strapiVersion)
         {
@@ -177,7 +177,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
                 .AddStringBody(jsonContent, ContentType.Json);
 
             var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            return jObject.ToContentResponse();
+            return jObject.ToContentResponse(metadata.ContentTypeId);
         }
         else
         {
@@ -199,7 +199,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}")
                 .AddQueryParameter("populate", "localizations");
             var response = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            return response.ToContentWithLocalizationsResponse();
+            return response.ToContentWithLocalizationsResponse(request.ContentTypeId);
         }
         catch (Exception ex)
         {
