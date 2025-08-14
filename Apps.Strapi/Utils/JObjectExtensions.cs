@@ -7,26 +7,26 @@ namespace Apps.Strapi.Utils;
 
 public static class JObjectExtensions
 {
-    public static List<DocumentResponse> ToContentListResponse(this List<JObject> jObjects)
+    public static List<DocumentResponse> ToContentListResponse(this List<JObject> jObjects, string contentTypeId)
     {
         var result = new List<DocumentResponse>();
         foreach (var jObject in jObjects)
         {
-            var contentResponse = jObject.ToContentResponse();
+            var contentResponse = jObject.ToContentResponse(contentTypeId);
             result.Add(contentResponse);
         }
 
         return result;
     }
 
-    public static DocumentResponse ToContentResponse(this JObject jObject)
+    public static DocumentResponse ToContentResponse(this JObject jObject, string contentTypeId)
     {
-        return ParseContentObject(jObject);
+        return ParseContentObject(jObject, contentTypeId);
     }
 
-    public static DocumentWithLocalizationsResponse ToContentWithLocalizationsResponse(this JObject jObject)
+    public static DocumentWithLocalizationsResponse ToContentWithLocalizationsResponse(this JObject jObject, string contentTypeId)
     {
-        var documentResponse = ParseContentObject(jObject);
+        var documentResponse = ParseContentObject(jObject, contentTypeId);
         var result = new DocumentWithLocalizationsResponse(documentResponse);
         
         JObject contentObject = jObject;
@@ -56,7 +56,7 @@ public static class JObjectExtensions
                 {
                     if (item.Type == JTokenType.Object)
                     {
-                        var localization = ParseContentObject((item as JObject)!);
+                        var localization = ParseContentObject((item as JObject)!, contentTypeId);
                         result.Localizations.Add(localization);
                     }
                 }
@@ -66,24 +66,23 @@ public static class JObjectExtensions
         return result;
     }
     
-    public static DocumentResponse ToFullContentResponse(this JObject jObject)
+    public static DocumentResponse ToFullContentResponse(this JObject jObject, string contentTypeId)
     {
         if (jObject["data"] != null)
         {
             var dataObject = jObject["data"] as JObject;
             if (dataObject != null)
             {
-                return dataObject.ToContentResponse();
+                return dataObject.ToContentResponse(contentTypeId);
             }
         }
 
-        return jObject.ToContentResponse();
+        return jObject.ToContentResponse(contentTypeId);
     }
     
-    private static DocumentResponse ParseContentObject(JObject contentObject)
+    private static DocumentResponse ParseContentObject(JObject contentObject, string contentTypeId)
     {
         var response = new DocumentResponse();
-        
         if (contentObject["attributes"] != null && contentObject["attributes"]!.Type == JTokenType.Object)
         {
             response.DocumentId = contentObject["id"]?.ToString();
@@ -118,6 +117,7 @@ public static class JObjectExtensions
             response.Locale = GetCaseInsensitiveValue(contentObject, "locale")?.ToString();
         }
         
+        response.ContentTypeId = contentTypeId;
         return response;
     }
     

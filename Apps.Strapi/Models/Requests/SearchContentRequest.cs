@@ -7,8 +7,11 @@ using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Strapi.Models.Requests;
 
-public class SearchContentRequest : ContentTypeIdentifier
+public class SearchContentRequest
 {
+    [Display("Content type IDs", Description = "The content types you want to search for.")]
+    public IEnumerable<string> ContentTypeIds { get; set; } = [];
+
     [Display("Language", Description = "The language of the content"), DataSource(typeof(LanguageDataHandler))]
     public string? Language { get; set; }
 

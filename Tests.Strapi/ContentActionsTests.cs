@@ -25,7 +25,7 @@ public class ContentActionsTests : TestBase
     {
         var request = new SearchContentRequest
         {
-            ContentTypeId = "animals"
+            ContentTypeIds = ["animals"]
         };
 
         var response = await _contentActions!.SearchContentAsync(request);
@@ -43,7 +43,7 @@ public class ContentActionsTests : TestBase
     {
         var request = new SearchContentRequest
         {
-            ContentTypeId = "animals",
+            ContentTypeIds = ["animals"],
             FieldNames = ["data.attributes.translation"],
             FieldValues = ["Human Translation"]
         };
@@ -61,15 +61,15 @@ public class ContentActionsTests : TestBase
         // Arrange
         var identifier = new ContentLanguageIdentifier
         {
-            ContentTypeId = "animals",
-            ContentId = "1",
+            ContentTypeId = "learns",
+            ContentId = "418",
             Language = "en"
         };
 
         // Act
         var response = await _contentActions!.DownloadContentAsync(identifier, new(), new()
         {
-            ExcludeFields = new List<string> { "data.attributes.contentKey", "data.attributes.status", "data.attributes.translation", "data.attributes.tags1", "data.attributes.tags2" }
+            ExcludeFields = ["data.attributes.status"]
         });
 
         // Assert

@@ -20,7 +20,7 @@ public class ContentDataHandler(InvocationContext invocationContext, [ActionPara
 
         var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}");
         var result = await Client.PaginateAsync<JObject>(apiRequest);
-        var documents = result.ToContentListResponse();
+        var documents = result.ToContentListResponse(identifier.ContentTypeId);
 
         return documents
             .Where(x => x.DocumentId != null && x.Title != null)
