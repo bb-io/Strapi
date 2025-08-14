@@ -22,21 +22,27 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     [Action("Search content", Description = "Returns a list of content based on specified inputs. Only for collection types content types.")]
     public async Task<SearchContentResponse> SearchContentAsync([ActionParameter] SearchContentRequest request)
     {
-        var apiRequest = new RestRequest($"/api/{request.ContentTypeId}");
-        if (request.Language != null)
+        var allDocuments = new List<DocumentResponse>();
+        foreach (var contentTypeId in request.ContentTypeIds)
         {
-            apiRequest.AddQueryParameter("locale", request.Language);
+            var apiRequest = new RestRequest($"/api/{contentTypeId}");
+            if (request.Language != null)
+            {
+                apiRequest.AddQueryParameter("locale", request.Language);
+            }
+
+            if (request.Status != null)
+            {
+                apiRequest.AddQueryParameter("status", request.Status);
+            }
+
+            QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, request.FieldNames, request.FieldValues);
+
+            var result = await Client.PaginateAsync<JObject>(apiRequest);
+            allDocuments.AddRange(result.ToContentListResponse());
         }
 
-        if (request.Status != null)
-        {
-            apiRequest.AddQueryParameter("status", request.Status);
-        }
-
-        QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, request.FieldNames, request.FieldValues);
-
-        var result = await Client.PaginateAsync<JObject>(apiRequest);
-        return new(result.ToContentListResponse());
+        return new(allDocuments);
     }
 
     [Action("Get missing localization languages", Description = "Returns a list of languages that haven't been localized yet for the specified content.")]
@@ -45,7 +51,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentTypeId, "Content type ID");
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentId, "Content ID");
 
-        if(request.ContentTypeId.EndsWith("s"))
+        if (request.ContentTypeId.EndsWith("s"))
         {
             request.ContentTypeId = request.ContentTypeId[..^1];
         }
@@ -72,7 +78,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             {
                 locales.Add(content.Locale);
             }
-            
+
             var missingLocales = MissingLocalesResponse.GetMissingLocales(locales!, targetLocales);
             return new MissingLocalesResponse(missingLocales, locales!);
         }
@@ -126,7 +132,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
 
         var title = JsonToHtmlConverter.ExtractTitle(response.Content!, identifier.ContentId ?? identifier.ContentTypeId);
         var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{title}.html");
-        
+
         return new(fileReference, identifier.ContentTypeId);
     }
 
