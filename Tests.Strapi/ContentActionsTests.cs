@@ -61,8 +61,8 @@ public class ContentActionsTests : TestBase
         // Arrange
         var identifier = new ContentLanguageIdentifier
         {
-            ContentTypeId = "learns",
-            ContentId = "418",
+            ContentTypeId = "animals",
+            ContentId = "421",
             Language = "en"
         };
 
@@ -109,10 +109,10 @@ public class ContentActionsTests : TestBase
         {
             File = new FileReference
             {
-                Name = "animals.html",
+                Name = "421.html",
                 ContentType = "text/html"
             },
-            TargetLanguage = "de",
+            TargetLanguage = "fr",
             StrapiVersion = "v4"
         };
 
@@ -150,7 +150,7 @@ public class ContentActionsTests : TestBase
         // Arrange
         var identifier = new GetMissingLocalesRequest
         {
-            ContentTypeId = "articles",
+            ContentTypeId = "animals",
             ContentId = "14116",
             StrapiVersion = "v4"
         };
@@ -166,5 +166,31 @@ public class ContentActionsTests : TestBase
         // Output for debugging
         Console.WriteLine($"Missing locales count: {response.MissingLocales.Count}");
         Console.WriteLine($"Missing locales: {JsonConvert.SerializeObject(response, Formatting.Indented)}");
+    }
+
+    [TestMethod]
+    public async Task UpdateContentAsync_ValidRequest_UpdatesContentSuccessfully()
+    {
+        // Arrange
+        var identifier = new ContentIdentifier
+        {
+            ContentTypeId = "articles",
+            ContentId = "kdvapq3g7rsig6s3jk6a68xb"
+        };
+        var request = new UpdateContentRequest
+        {
+            FieldNames = ["LocalizationState"],
+            FieldValues = ["In progress"]
+        };
+
+        // Act
+        var response = await _contentActions!.UpdateContentAsync(identifier, request);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.IsNotNull(response.DocumentId);
+        Assert.AreEqual(identifier.ContentTypeId, response.ContentTypeId);
+
+        Console.WriteLine(JsonConvert.SerializeObject(response, Formatting.Indented));
     }
 }

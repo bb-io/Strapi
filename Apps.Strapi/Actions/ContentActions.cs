@@ -185,6 +185,28 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
     }
 
+    [Action("Update content", Description = "Updates a content by ID.")]
+    public async Task<DocumentResponse> UpdateContentAsync([ActionParameter] ContentIdentifier identifier,
+        [ActionParameter] UpdateContentRequest request)
+    {
+        ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentTypeId, "Content type ID");
+        ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentId, "Content ID");
+
+        var dataDictionary = new Dictionary<string, object>();
+        for (int i = 0; i < request.FieldNames.Count(); i++)
+        {
+            var fieldName = request.FieldNames.ElementAt(i);
+            var fieldValue = request.FieldValues.ElementAtOrDefault(i) ?? string.Empty;
+            dataDictionary[fieldName] = fieldValue;
+        }
+
+        var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}", Method.Put)
+            .AddJsonBody(new { data = dataDictionary });
+
+        var response = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+        return response.ToFullContentResponse(identifier.ContentTypeId);
+    }
+
     [Action("Delete content", Description = "Deletes a content by ID.")]
     public async Task DeleteContentAsync([ActionParameter] ContentIdentifier request)
     {
