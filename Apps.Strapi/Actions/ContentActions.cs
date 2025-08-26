@@ -11,6 +11,7 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Models.Responses;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 
@@ -66,7 +67,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var targetLocales = languages.Select(l => l.Code).ToList();
         if (request.StrapiVersion == StrapiVersions.V4)
         {
-            var response = await GetLocalizationObjectsV4Async(request, request.StrapiVersion);
+            var response = await GetLocalizationObjectsV4Async(request);
             var locales = MissingLocalesResponse.GetLocalesFromJObject(response, request.ContentTypeId);
             var missingLocales = MissingLocalesResponse.GetMissingLocales(locales, targetLocales);
             return new MissingLocalesResponse(missingLocales, locales);
@@ -178,12 +179,24 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
         else if (StrapiVersions.V4 == strapiVersion)
         {
-            endpoint += "/localizations";
-            var apiRequest = new RestRequest(endpoint, Method.Post)
-                .AddStringBody(jsonContent, ContentType.Json);
-
-            var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            return jObject.ToContentResponse(metadata.ContentTypeId);
+            try
+            {
+                return await LocalizeV4Async(endpoint, jsonContent, metadata.ContentTypeId);
+            }
+            catch (Exception e) when (e.Message.Contains("locale is already used"))
+            {
+                var contentId = metadata.ContentTypeId;
+                if (contentId.EndsWith("s"))
+                {
+                    contentId = metadata.ContentTypeId[..^1];
+                }
+                
+                return await HandleV4LocaleAlreadyUsedAsync(
+                    contentId,
+                    metadata.ContentId!,
+                    jsonContent,
+                    request.TargetLanguage);
+            }
         }
         else
         {
@@ -219,6 +232,57 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}", Method.Delete);
         await Client.ExecuteWithErrorHandling(apiRequest);
     }
+    
+    private async Task<DocumentResponse> LocalizeV4Async(string endpoint, string jsonContent, string contentTypeId)
+    {
+        endpoint += "/localizations";
+        var apiRequest = new RestRequest(endpoint, Method.Post)
+            .AddStringBody(jsonContent, ContentType.Json);
+
+        var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+        return jObject.ToContentResponse(contentTypeId);
+    }
+
+    private async Task<DocumentResponse> HandleV4LocaleAlreadyUsedAsync(
+        string contentTypeId,
+        string contentId,
+        string jsonContent,
+        string targetLanguage)
+    {
+        var response = await GetLocalizationObjectsV4Async(new()
+        {
+            ContentTypeId = contentTypeId,
+            ContentId = contentId,
+            StrapiVersion = StrapiVersions.V4
+        });
+
+        var locales = MissingLocalesResponse.GetIdsWithLocalesFromJObject(response, contentTypeId);
+        var existingLocale = locales.FirstOrDefault(l => l.Locale == targetLanguage);
+        if (existingLocale != null)
+        {
+            var jsonObject = JObject.Parse(jsonContent);
+            var propertiesToRemove = jsonObject.Properties()
+                .Where(p => p.Value.Type == JTokenType.Null)
+                .ToList();
+            
+            foreach (var prop in propertiesToRemove)
+            {
+                prop.Remove();
+            }
+            
+            jsonContent = JsonConvert.SerializeObject(jsonObject);
+            
+            var apiRequest = new RestRequest($"/api/{contentTypeId}/{existingLocale.Id}", Method.Put)
+                .AddStringBody(jsonContent, ContentType.Json);
+
+            var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+            return jObject.ToFullContentResponse(contentTypeId);
+        }
+        else
+        {
+            throw new PluginApplicationException("Failed to find existing localization, although Strapi returned that the locale is already used. Please, ask Blackbird support for further investigation");
+        }
+    }
 
     private async Task<DocumentWithLocalizationsResponse> GetLocalizationObjectsV5Async(GetMissingLocalesRequest request)
     {
@@ -235,7 +299,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
     }
 
-    private async Task<JObject> GetLocalizationObjectsV4Async(GetMissingLocalesRequest identifier, string locale)
+    private async Task<JObject> GetLocalizationObjectsV4Async(GetMissingLocalesRequest identifier)
     {
         try
         {
