@@ -16,7 +16,7 @@ using RestSharp;
 
 namespace Apps.Strapi.Actions;
 
-[ActionList]
+[ActionList("Content")]
 public class ContentActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : Invocable(invocationContext)
 {
     [Action("Search content", Description = "Returns a list of content based on specified inputs. Only for collection types content types.")]

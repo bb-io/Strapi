@@ -9,7 +9,7 @@ using RestSharp;
 
 namespace Apps.Strapi.Events;
 
-[PollingEventList]
+[PollingEventList("Content")]
 public class ContentPollingList(InvocationContext invocationContext) : Invocable(invocationContext)
 {
     [PollingEvent("On content created or updated", Description = "Polling event that periodically checks for new new or updated content. If the new or updated content is found, it will be returned as a list of content items.")]

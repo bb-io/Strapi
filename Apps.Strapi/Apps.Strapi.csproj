@@ -4,14 +4,14 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Product>Strapi [Beta]</Product>
+        <Product>Strapi</Product>
         <Description>Strapi is the next-gen headless CMS, open-source, JavaScript/TypeScript, enabling content-rich experiences to be created, managed and exposed to any digital device.</Description>
-        <Version>1.0.12</Version>
+        <Version>1.0.13</Version>
         <AssemblyName>Apps.Strapi</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.12.0" />
+        <PackageReference Include="Blackbird.Applications.SDK.Blueprints" Version="1.0.0" />
         <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.25" />
         <PackageReference Include="HtmlAgilityPack" Version="1.6.13" />
     </ItemGroup>
