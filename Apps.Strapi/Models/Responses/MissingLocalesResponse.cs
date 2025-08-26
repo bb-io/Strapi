@@ -45,6 +45,42 @@ public class MissingLocalesResponse(IEnumerable<string> missingLocales, IEnumera
 
         return locales.Distinct().ToList();
     }
+    
+    public static List<IdWithLocale> GetIdsWithLocalesFromJObject(JObject jObject, string contentType)
+    {
+        var idsWithLocales = new List<IdWithLocale>();
+
+        try
+        {
+            var locale = jObject["data"]?[contentType]?["data"]?["attributes"]?["locale"]?.ToString();
+            var id = jObject["data"]?[contentType]?["data"]?["id"]?.ToString();
+            if (!string.IsNullOrEmpty(locale) && !string.IsNullOrEmpty(id))
+            {
+                idsWithLocales.Add(new IdWithLocale(id, locale));
+            }
+
+            var localizationsData = jObject["data"]?[contentType]?["data"]?["attributes"]?["localizations"]?["data"];
+
+            if (localizationsData != null && localizationsData.Type == JTokenType.Array)
+            {
+                foreach (var item in localizationsData)
+                {
+                    var currentLocale = item["attributes"]?["locale"]?.ToString();
+                    var currentId = item["id"]?.ToString();
+                    if (!string.IsNullOrEmpty(currentLocale) && !string.IsNullOrEmpty(currentId))
+                    {
+                        idsWithLocales.Add(new IdWithLocale(currentId, currentLocale));
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new PluginApplicationException("Failed to extract locales from the provided JSON object. Please, ask Blackbird support for further investigation", ex);
+        }
+
+        return idsWithLocales.Distinct().ToList();
+    }
 
     public static List<string> GetMissingLocales(IEnumerable<string> existingLocales, IEnumerable<string> targetLocales)
     {
@@ -53,3 +89,5 @@ public class MissingLocalesResponse(IEnumerable<string> missingLocales, IEnumera
             .ToList();
     }
 }
+
+public record IdWithLocale(string Id, string Locale);
