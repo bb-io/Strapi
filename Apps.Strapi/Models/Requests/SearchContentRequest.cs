@@ -23,4 +23,7 @@ public class SearchContentRequest
 
     [Display("Field values", Description = "The values of the fields to filter the content by.")]
     public IEnumerable<string>? FieldValues { get; set; }
+
+    [Display("Updated after", Description = "Return only documents updated strictly after this timestamp (UTC).")]
+    public DateTime? UpdatedAfter { get; set; }
 }
