@@ -6,14 +6,14 @@
         <Nullable>enable</Nullable>
         <Product>Strapi</Product>
         <Description>Strapi is the next-gen headless CMS, open-source, JavaScript/TypeScript, enabling content-rich experiences to be created, managed and exposed to any digital device.</Description>
-        <Version>1.0.16</Version>
+        <Version>1.0.17</Version>
         <AssemblyName>Apps.Strapi</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Blackbird.Applications.SDK.Blueprints" Version="1.0.0" />
+        <PackageReference Include="Blackbird.Applications.SDK.Blueprints" Version="1.0.0-rc.10159" />
         <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.25" />
-        <PackageReference Include="HtmlAgilityPack" Version="1.6.13" />
+        <PackageReference Include="Blackbird.Filters" Version="1.1.22" />
     </ItemGroup>
 
     <ItemGroup>

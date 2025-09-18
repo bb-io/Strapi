@@ -8,7 +8,7 @@ public class DocumentWithLocalizationsResponse : DocumentResponse
     
     public DocumentWithLocalizationsResponse(DocumentResponse documentResponse)
     {
-        DocumentId = documentResponse.DocumentId;
+        Id = documentResponse.Id;
         Title = documentResponse.Title;
         CreatedAt = documentResponse.CreatedAt;
         UpdatedAt = documentResponse.UpdatedAt;

@@ -12,7 +12,7 @@ public class DocumentWithContentTypeResponse : DocumentResponse
 
     public DocumentWithContentTypeResponse(DocumentResponse documentResponse, string contentTypeId)
     {
-        DocumentId = documentResponse.DocumentId;
+        Id = documentResponse.Id;
         Title = documentResponse.Title;
         CreatedAt = documentResponse.CreatedAt;
         UpdatedAt = documentResponse.UpdatedAt;
