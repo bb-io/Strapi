@@ -5,11 +5,14 @@ using Apps.Strapi.Models.Requests;
 using Apps.Strapi.Models.Responses;
 using Apps.Strapi.Utils;
 using Apps.Strapi.Utils.Converters;
+using Blackbird.Applications.SDK.Blueprints;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
+using Blackbird.Filters.Transformations;
+using Blackbird.Filters.Xliff.Xliff2;
 using Models.Responses;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -21,6 +24,7 @@ namespace Apps.Strapi.Actions;
 public class ContentActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : Invocable(invocationContext)
 {
     [Action("Search content", Description = "Returns a list of content based on specified inputs. Only for collection types content types.")]
+    [BlueprintActionDefinition(BlueprintAction.SearchContent)]
     public async Task<SearchContentResponse> SearchContentAsync([ActionParameter] SearchContentRequest request)
     {
         var allDocuments = new List<DocumentResponse>();
@@ -113,6 +117,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     }
 
     [Action("Download content", Description = "Downloads a content by ID. By default  it will download the content for published status")]
+    [BlueprintActionDefinition(BlueprintAction.DownloadContent)]
     public async Task<DownloadContentResponse> DownloadContentAsync([ActionParameter] ContentLanguageIdentifier identifier,
         [ActionParameter] ContentStatusOptionalRequest optionalRequest,
         [ActionParameter] DownloadContentRequest downloadContentRequest)
@@ -144,6 +149,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     }
 
     [Action("Upload content", Description = "Uploads a HTML file to a specific language to localize the content.")]
+    [BlueprintActionDefinition(BlueprintAction.UploadContent)]
     public async Task<DocumentResponse> UploadContentAsync([ActionParameter] UploadContentRequest request)
     {
         var strapiVersion = request.StrapiVersion ?? "v5";
@@ -153,14 +159,25 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             throw new PluginMisconfigurationException($"Unsupported Strapi version '{strapiVersion}'. Supported versions are: {supportedVersions}.");
         }
 
-        var fileStream = await fileManagementClient.DownloadAsync(request.File);
+        var fileStream = await fileManagementClient.DownloadAsync(request.Content);
         var memoryStream = new MemoryStream();
         await fileStream.CopyToAsync(memoryStream);
         memoryStream.Position = 0;
 
         var htmlString = System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+        if (Xliff2Serializer.IsXliff2(htmlString))
+        {
+            htmlString = Transformation.Parse(htmlString, request.Content.Name).Target().Serialize();
+            if (htmlString == null) throw new PluginMisconfigurationException("XLIFF did not contain any files");
+        }
+        
         var metadata = HtmlToJsonConverter.ExtractMetadata(htmlString);
-        var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString, strapiVersion, request.TargetLanguage);
+        if (!string.IsNullOrEmpty(request.ContentId))
+        {
+            metadata = metadata with { ContentId = request.ContentId };
+        }
+        
+        var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString, strapiVersion, request.Locale);
 
         var endpoint = $"/api/{metadata.ContentTypeId}";
         if (!string.IsNullOrEmpty(metadata.ContentId))
@@ -171,7 +188,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         if (StrapiVersions.V5 == strapiVersion)
         {
             var apiRequest = new RestRequest(endpoint, Method.Put)
-                .AddQueryParameter("locale", request.TargetLanguage)
+                .AddQueryParameter("locale", request.Locale)
                 .AddBody(jsonContent, ContentType.Json);
 
             var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
@@ -196,7 +213,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
                     metadata.ContentTypeId,
                     metadata.ContentId!,
                     jsonContent,
-                    request.TargetLanguage);
+                    request.Locale);
             }
         }
         else

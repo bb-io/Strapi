@@ -23,8 +23,8 @@ public class ContentDataHandler(InvocationContext invocationContext, [ActionPara
         var documents = result.ToContentListResponse(identifier.ContentTypeId);
 
         return documents
-            .Where(x => x.DocumentId != null && x.Title != null)
+            .Where(x => x.Id != null && x.Title != null)
             .Where(x => context.SearchString == null || x.Title!.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
-            .Select(x => new DataSourceItem(x.DocumentId!, x.Title!));
+            .Select(x => new DataSourceItem(x.Id!, x.Title!));
     }
 }

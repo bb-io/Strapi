@@ -85,7 +85,7 @@ public static class JObjectExtensions
         var response = new DocumentResponse();
         if (contentObject["attributes"] != null && contentObject["attributes"]!.Type == JTokenType.Object)
         {
-            response.DocumentId = contentObject["id"]?.ToString();
+            response.Id = contentObject["id"]?.ToString();
             var attributesObj = contentObject["attributes"] as JObject;
 
             if (attributesObj == null)
@@ -93,7 +93,7 @@ public static class JObjectExtensions
                 return response;
             }
 
-            response.DocumentId = GetCaseInsensitiveValue(attributesObj, "documentId")?.ToString() ?? response.DocumentId;
+            response.Id = GetCaseInsensitiveValue(attributesObj, "documentId")?.ToString() ?? response.Id;
 
             response.Title = GetCaseInsensitiveValue(attributesObj, "name")?.ToString() ??
                            GetCaseInsensitiveValue(attributesObj, "title")?.ToString();
@@ -105,8 +105,8 @@ public static class JObjectExtensions
         }
         else
         {
-            response.DocumentId = GetCaseInsensitiveValue(contentObject, "id")?.ToString();
-            response.DocumentId = GetCaseInsensitiveValue(contentObject, "documentId")?.ToString() ?? response.DocumentId;
+            response.Id = GetCaseInsensitiveValue(contentObject, "id")?.ToString();
+            response.Id = GetCaseInsensitiveValue(contentObject, "documentId")?.ToString() ?? response.Id;
 
             response.Title = GetCaseInsensitiveValue(contentObject, "name")?.ToString() ??
                            GetCaseInsensitiveValue(contentObject, "title")?.ToString();

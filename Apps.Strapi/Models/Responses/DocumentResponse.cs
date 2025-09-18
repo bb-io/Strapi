@@ -1,11 +1,13 @@
+using Blackbird.Applications.SDK.Blueprints.Interfaces.CMS;
 using Blackbird.Applications.Sdk.Common;
+using Newtonsoft.Json;
 
 namespace Models.Responses;
 
-public class DocumentResponse
+public class DocumentResponse : IContentOutput
 {
-    [Display("Content ID")]
-    public string? DocumentId { get; set; }
+    [Display("Content ID"), JsonProperty("documentId")]
+    public string Id { get; set; } = string.Empty;
 
     [Display("Content type ID")]
     public string? ContentTypeId { get; set; }

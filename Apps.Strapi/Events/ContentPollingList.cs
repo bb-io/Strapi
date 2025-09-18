@@ -1,6 +1,7 @@
 using Apps.Strapi.Events.Models;
 using Apps.Strapi.Models.Responses;
 using Apps.Strapi.Utils;
+using Blackbird.Applications.SDK.Blueprints;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
 using Models.Responses;
@@ -13,6 +14,7 @@ namespace Apps.Strapi.Events;
 public class ContentPollingList(InvocationContext invocationContext) : Invocable(invocationContext)
 {
     [PollingEvent("On content created or updated", Description = "Polling event that periodically checks for new new or updated content. If the new or updated content is found, it will be returned as a list of content items.")]
+    [BlueprintEventDefinition(BlueprintEvent.ContentCreatedOrUpdatedMultiple)]
     public async Task<PollingEventResponse<DateMemory, SearchContentWithTypeResponse>> OnContentCreatedOrUpdatedAsync(PollingEventRequest<DateMemory> request,
         [PollingEventParameter] ContentFilters contentRequest)
     {
