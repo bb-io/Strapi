@@ -22,9 +22,18 @@ public static class JsonToHtmlConverter
         return title;
     }
 
-    public static string ConvertToHtml(string json, string? contentId, string contentType, IEnumerable<string>? nonLocalizableFields)
+    public static string ConvertToHtml(string json, string? contentId, string contentType, IEnumerable<string>? nonLocalizableFields, IEnumerable<string>? uniqueFields)
     {
         var jsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
+        foreach (var field in uniqueFields ?? Array.Empty<string>())
+        {
+            var tokens = jsonObj.SelectTokens(field).ToList();
+            foreach (var token in tokens)
+            {
+                token.Parent?.Remove();
+            }
+        }
+        
         var dataObj = jsonObj["data"] as JObject;
 
         if (dataObj == null)
