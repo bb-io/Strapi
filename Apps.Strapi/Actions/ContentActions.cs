@@ -136,7 +136,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
 
         var response = await Client.ExecuteWithErrorHandling(request);
-        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId, downloadContentRequest.ExcludeFields);
+        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId, downloadContentRequest.ExcludeFields, downloadContentRequest.UniqueFields);
         var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlString))
         {
             Position = 0

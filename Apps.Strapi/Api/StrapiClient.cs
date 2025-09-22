@@ -39,7 +39,7 @@ public class StrapiClient : BlackBirdRestClient
             return new PluginApplicationException(response.Content);
         }
 
-        throw new PluginApplicationException(error.ToString());
+        return new PluginApplicationException(error.ToString());
     }
 
     public async Task<List<T>> PaginateAsync<T>(RestRequest request)

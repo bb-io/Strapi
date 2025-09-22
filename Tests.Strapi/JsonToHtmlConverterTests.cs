@@ -66,7 +66,7 @@ public class JsonToHtmlConverterTests : TestBase
         string contentId = "animals:lion";
 
         // Act
-        var html = JsonToHtmlConverter.ConvertToHtml(_testJson, contentId, "animals", null);
+        var html = JsonToHtmlConverter.ConvertToHtml(_testJson, contentId, "animals", null, null);
 
         // Assert
         Assert.IsFalse(string.IsNullOrEmpty(html), "HTML should not be empty");
@@ -85,7 +85,7 @@ public class JsonToHtmlConverterTests : TestBase
         string contentId = "test-content";
 
         Assert.ThrowsException<ArgumentException>(() => 
-            JsonToHtmlConverter.ConvertToHtml(invalidJson, contentId, "animals", null),
+            JsonToHtmlConverter.ConvertToHtml(invalidJson, contentId, "animals", null, null),
             "Should throw exception for invalid JSON structure");
     }
 }
