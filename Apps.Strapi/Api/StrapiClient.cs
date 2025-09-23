@@ -1,3 +1,4 @@
+using System.Net;
 using Apps.Strapi.Constants;
 using Apps.Strapi.Models.Dtos;
 using Blackbird.Applications.Sdk.Common.Authentication;
@@ -31,6 +32,11 @@ public class StrapiClient : BlackBirdRestClient
             }
 
             return new PluginApplicationException(response.ErrorMessage);
+        }
+        
+        if(response.StatusCode == HttpStatusCode.MethodNotAllowed && response.ContentType == "text/plain")
+        {
+            return new PluginApplicationException("Probably you provided wrong 'Content type ID'. Please verify that the content type ID is correct and ends with 's' (e.g., 'articles' not 'article').");
         }
 
         var error = JsonConvert.DeserializeObject<ErrorDto>(response.Content!);
