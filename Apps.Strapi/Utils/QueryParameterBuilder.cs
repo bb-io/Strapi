@@ -28,7 +28,11 @@ public static class QueryParameterBuilder
                 : keyValue.field;
                 
             var queryParameter = $"filters[{lastPart}][{@operator}]";
-            request.AddQueryParameter(queryParameter, keyValue.value);
+            var value = keyValue.value.Equals("null", StringComparison.OrdinalIgnoreCase) 
+                ? null 
+                : keyValue.value;
+            
+            request.AddQueryParameter(queryParameter, value);
         }
     }
 }

@@ -21,7 +21,7 @@ public class SearchContentRequest
     [Display("Field names", Description = "The names of the fields to filter the content by.")]
     public IEnumerable<string>? FieldNames { get; set; }
 
-    [Display("Field values", Description = "The values of the fields to filter the content by.")]
+    [Display("Field values", Description = "The values of the fields to filter the content by. Add 'null' to filter by empty values.")]
     public IEnumerable<string>? FieldValues { get; set; }
 
     [Display("Updated after", Description = "Return only documents updated strictly after this timestamp (UTC).")]
