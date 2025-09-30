@@ -48,7 +48,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             }
 
             QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, request.FieldNames, request.FieldValues);
-
+            
             var result = await Client.PaginateAsync<JObject>(apiRequest);
             allDocuments.AddRange(result.ToContentListResponse(contentTypeId));
         }
