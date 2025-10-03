@@ -25,7 +25,8 @@ public class ContentActionsTests : TestBase
     {
         var request = new SearchContentRequest
         {
-            ContentTypeIds = ["animals"]
+            ContentTypeIds = ["articles"],
+            CreatedAfter = DateTime.Parse("2025-10-03T04:38:40.751Z"),
         };
 
         var response = await _contentActions!.SearchContentAsync(request);
@@ -34,7 +35,7 @@ public class ContentActionsTests : TestBase
         Assert.IsTrue(response.Content.Count > 0);
         
         Console.WriteLine($"Total count: {response.TotalCount}");
-        var first3Documents = response.Content.Where(x => x.Title!.Contains("Test - do not publish"));
+        var first3Documents = response.Content.Take(3);
         Console.WriteLine(JsonConvert.SerializeObject(first3Documents, Formatting.Indented));
     }
 
@@ -74,11 +75,11 @@ public class ContentActionsTests : TestBase
 
         // Assert
         Assert.IsNotNull(response);
-        Assert.IsNotNull(response.File);
-        Assert.IsFalse(string.IsNullOrEmpty(response.File.Name));
-        Assert.AreEqual("text/html", response.File.ContentType);
+        Assert.IsNotNull(response.Content);
+        Assert.IsFalse(string.IsNullOrEmpty(response.Content.Name));
+        Assert.AreEqual("text/html", response.Content.ContentType);
         
-        Console.WriteLine(JsonConvert.SerializeObject(response.File, Formatting.Indented));
+        Console.WriteLine(JsonConvert.SerializeObject(response.Content, Formatting.Indented));
     }
 
     [TestMethod]
@@ -107,18 +108,18 @@ public class ContentActionsTests : TestBase
         // Arrange
         var request = new UploadContentRequest
         {
-            File = new FileReference
+            Content = new FileReference
             {
                 Name = "421.html",
                 ContentType = "text/html"
             },
-            TargetLanguage = "fr",
+            Locale = "fr",
             StrapiVersion = "v4"
         };
 
         // Act & Assert
         var result = await _contentActions!.UploadContentAsync(request);
-        Console.WriteLine($"Successfully uploaded content from {request.File.Name} to language {request.TargetLanguage}");
+        Console.WriteLine($"Successfully uploaded content from {request.Content.Name} to language {request.Locale}");
         Console.WriteLine(JsonConvert.SerializeObject(result, Formatting.Indented));
     }
 
@@ -188,7 +189,7 @@ public class ContentActionsTests : TestBase
 
         // Assert
         Assert.IsNotNull(response);
-        Assert.IsNotNull(response.DocumentId);
+        Assert.IsNotNull(response.Id);
         Assert.AreEqual(identifier.ContentTypeId, response.ContentTypeId);
 
         Console.WriteLine(JsonConvert.SerializeObject(response, Formatting.Indented));

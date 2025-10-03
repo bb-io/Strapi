@@ -1,6 +1,5 @@
 using Apps.Strapi.Handlers;
 using Apps.Strapi.Handlers.Static;
-using Apps.Strapi.Models.Identifiers;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
@@ -26,4 +25,7 @@ public class SearchContentRequest
 
     [Display("Updated after", Description = "Return only documents updated strictly after this timestamp (UTC).")]
     public DateTime? UpdatedAfter { get; set; }
+    
+    [Display("Created after", Description = "Return only documents created strictly after this timestamp (UTC).")]
+    public DateTime? CreatedAfter { get; set; }
 }

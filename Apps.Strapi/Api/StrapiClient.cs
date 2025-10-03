@@ -12,40 +12,14 @@ namespace Apps.Strapi.Api;
 
 public class StrapiClient : BlackBirdRestClient
 {
-    public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> creds) : base(new()
+    public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> credentialsProviders) : base(new()
     {
-        BaseUrl = new(creds.Get(CredNames.BaseUrl).Value.Trim('/')),
+        BaseUrl = new(credentialsProviders.Get(CredNames.BaseUrl).Value.Trim('/')),
         ThrowOnAnyError = false
     })
     {
-        var apiToken = creds.Get(CredNames.ApiToken).Value;
+        var apiToken = credentialsProviders.Get(CredNames.ApiToken).Value;
         this.AddDefaultHeader("Authorization", $"Bearer {apiToken}");
-    }
-
-    protected override Exception ConfigureErrorException(RestResponse response)
-    {
-        if(string.IsNullOrEmpty(response.Content))
-        {
-            if(string.IsNullOrEmpty(response.ErrorMessage))
-            {
-                return new PluginApplicationException($"Status code: {response.StatusCode}");
-            }
-
-            return new PluginApplicationException(response.ErrorMessage);
-        }
-        
-        if(response.StatusCode == HttpStatusCode.MethodNotAllowed && response.ContentType == "text/plain")
-        {
-            return new PluginApplicationException("Probably you provided wrong 'Content type ID'. Please verify that the content type ID is correct and ends with 's' (e.g., 'articles' not 'article').");
-        }
-
-        var error = JsonConvert.DeserializeObject<ErrorDto>(response.Content!);
-        if(error is null)
-        {
-            return new PluginApplicationException(response.Content);
-        }
-
-        return new PluginApplicationException(error.ToString());
     }
 
     public async Task<List<T>> PaginateAsync<T>(RestRequest request)
@@ -87,5 +61,36 @@ public class StrapiClient : BlackBirdRestClient
         } while (true);
         
         return allResults;
+    }
+    
+    protected override Exception ConfigureErrorException(RestResponse response)
+    {
+        if(string.IsNullOrEmpty(response.Content))
+        {
+            if(string.IsNullOrEmpty(response.ErrorMessage))
+            {
+                return new PluginApplicationException($"Status code: {response.StatusCode}");
+            }
+
+            return new PluginApplicationException(response.ErrorMessage);
+        }
+        
+        if(response.StatusCode == HttpStatusCode.MethodNotAllowed && response.ContentType == "text/plain")
+        {
+            return new PluginApplicationException("Probably you provided wrong 'Content type ID'. Please verify that the content type ID is correct and ends with 's' (e.g., 'articles' not 'article').");
+        }
+        
+        if(response.ContentType == "text/html")
+        {
+            return new PluginApplicationException($"Status code: {response.StatusCode}, content: {response.Content}");
+        }
+
+        var error = JsonConvert.DeserializeObject<ErrorDto>(response.Content!);
+        if(error is null)
+        {
+            return new PluginApplicationException(response.Content);
+        }
+
+        return new PluginApplicationException(error.ToString());
     }
 }

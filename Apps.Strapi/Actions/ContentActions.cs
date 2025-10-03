@@ -46,6 +46,12 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
                 var isoUtc = request.UpdatedAfter.Value.ToUniversalTime().ToString("o");
                 QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest,new[] { "updatedAt" },new[] { isoUtc },"$gt");
             }
+            
+            if (request.CreatedAfter.HasValue)
+            {
+                var isoUtc = request.CreatedAfter.Value.ToUniversalTime().ToString("o");
+                QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest,new[] { "createdAt" },new[] { isoUtc },"$gt");
+            }
 
             QueryParameterBuilder.AddFieldFiltersIfAvailable(apiRequest, request.FieldNames, request.FieldValues);
             
