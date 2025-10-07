@@ -1,12 +1,14 @@
+using Apps.Strapi.Constants;
 using Apps.Strapi.Handlers;
 using Apps.Strapi.Handlers.Static;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using RestSharp;
 
 namespace Apps.Strapi.Models.Requests;
 
-public class SearchContentRequest
+public class SearchContentRequest : VersionOptionalRequest
 {
     [Display("Content type IDs", Description = "The content types you want to search for.")]
     public IEnumerable<string> ContentTypeIds { get; set; } = [];
@@ -28,4 +30,29 @@ public class SearchContentRequest
     
     [Display("Created after", Description = "Return only documents created strictly after this timestamp (UTC).")]
     public DateTime? CreatedAfter { get; set; }
+
+    public void ApplyStatusIfPresent(RestRequest restRequest)
+    {
+        var version = GetVersionOrDefault();
+        if (version == StrapiVersions.V5)
+        {
+            if(!string.IsNullOrEmpty(Status))
+            {
+                restRequest.AddQueryParameter("status", Status);
+            }
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(Status) && Status == "draft")
+            {
+                restRequest.AddQueryParameter("publicationState", "preview");
+                restRequest.AddQueryParameter("filters[publishedAt][$null]", "true");
+            }
+            else if (!string.IsNullOrEmpty(Status) && Status == "published")
+            {
+                restRequest.AddQueryParameter("publicationState", "live");
+                restRequest.AddQueryParameter("filters[publishedAt][$null]", "false");
+            }
+        }
+    }
 }

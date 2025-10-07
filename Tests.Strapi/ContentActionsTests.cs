@@ -1,4 +1,5 @@
 using Apps.Strapi.Actions;
+using Apps.Strapi.Constants;
 using Apps.Strapi.Models.Identifiers;
 using Apps.Strapi.Models.Requests;
 using Blackbird.Applications.Sdk.Common.Exceptions;
@@ -26,7 +27,11 @@ public class ContentActionsTests : TestBase
         var request = new SearchContentRequest
         {
             ContentTypeIds = ["articles"],
-            CreatedAfter = DateTime.Parse("2025-10-03T04:38:40.751Z"),
+            Language = "en",
+            Status = "draft",
+            StrapiVersion = StrapiVersions.V4,
+            FieldNames = ["data.attributes.contentKey"],
+            FieldValues = ["article_306"]
         };
 
         var response = await _contentActions!.SearchContentAsync(request);
