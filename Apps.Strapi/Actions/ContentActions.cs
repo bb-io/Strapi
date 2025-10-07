@@ -36,10 +36,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
                 apiRequest.AddQueryParameter("locale", request.Language);
             }
 
-            if (request.Status != null)
-            {
-                apiRequest.AddQueryParameter("status", request.Status);
-            }
+            request.ApplyStatusIfPresent(apiRequest);
 
             if (request.UpdatedAfter.HasValue)
             {

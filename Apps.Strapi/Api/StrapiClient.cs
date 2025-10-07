@@ -6,12 +6,19 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 using Blackbird.Applications.Sdk.Utils.RestSharp;
 using Newtonsoft.Json;
+using Polly;
+using Polly.Retry;
 using RestSharp;
 
 namespace Apps.Strapi.Api;
 
 public class StrapiClient : BlackBirdRestClient
 {
+    private readonly AsyncRetryPolicy _retryPolicy = Policy
+        .Handle<Exception>(x => x.Message.Contains("An error occurred while sending the request.") ||
+                                x.Message.Contains("Rate limit exceeded"))
+        .WaitAndRetryAsync(3, (i) => TimeSpan.FromSeconds(Math.Pow(2, i)));
+    
     public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> credentialsProviders) : base(new()
     {
         BaseUrl = new(credentialsProviders.Get(CredNames.BaseUrl).Value.Trim('/')),
@@ -62,7 +69,12 @@ public class StrapiClient : BlackBirdRestClient
         
         return allResults;
     }
-    
+
+    public override Task<RestResponse> ExecuteWithErrorHandling(RestRequest request)
+    {
+        return _retryPolicy.ExecuteAsync(() => base.ExecuteWithErrorHandling(request));
+    }
+
     protected override Exception ConfigureErrorException(RestResponse response)
     {
         if(string.IsNullOrEmpty(response.Content))
@@ -71,13 +83,19 @@ public class StrapiClient : BlackBirdRestClient
             {
                 return new PluginApplicationException($"Status code: {response.StatusCode}");
             }
-
-            return new PluginApplicationException(response.ErrorMessage);
+            
+            return new PluginApplicationException($"Couldn't reach the server. {response.ErrorMessage}");
         }
         
         if(response.StatusCode == HttpStatusCode.MethodNotAllowed && response.ContentType == "text/plain")
         {
             return new PluginApplicationException("Probably you provided wrong 'Content type ID'. Please verify that the content type ID is correct and ends with 's' (e.g., 'articles' not 'article').");
+        }
+        
+        if(response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            // We throw an exception here to catch it in the retry policy in case of rate limiting
+            throw new PluginApplicationException("Rate limit exceeded. Please try again later.");
         }
         
         if(response.ContentType == "text/html")
