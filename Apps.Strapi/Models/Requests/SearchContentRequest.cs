@@ -13,7 +13,7 @@ public class SearchContentRequest : VersionOptionalRequest
     [Display("Content type IDs", Description = "The content types you want to search for.")]
     public IEnumerable<string> ContentTypeIds { get; set; } = [];
 
-    [Display("Language", Description = "The language of the content"), DataSource(typeof(LanguageDataHandler))]
+    [Display("Language", Description = "The language of the content"), DataSource(typeof(SearchLanguageDataHandler))]
     public string? Language { get; set; }
 
     [Display("Status", Description = "The status of the content"), StaticDataSource(typeof(StatusDataHandler))]

@@ -11,7 +11,7 @@ public class ContentFilters
     [Display("Content type IDs", Description = "The content type of the document")]
     public IEnumerable<string> ContentTypeIds { get; set; } = new List<string>();
 
-    [Display("Language", Description = "The language of the content"), DataSource(typeof(LanguageDataHandler))]
+    [Display("Language", Description = "The language of the content"), DataSource(typeof(SearchLanguageDataHandler))]
     public string? Language { get; set; }
 
     [Display("Status", Description = "The status of the content"), StaticDataSource(typeof(StatusDataHandler))]
