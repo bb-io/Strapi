@@ -287,7 +287,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
                 .AddStringBody(body, ContentType.Json);
 
             var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            return jObject.ToFullContentResponse(singularContentTypeId);
+            return jObject.ToFullContentResponse(pluralContentTypeId);
         }
         else
         {
