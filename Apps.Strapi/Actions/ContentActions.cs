@@ -64,11 +64,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentTypeId, "Content type ID");
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentId, "Content ID");
-
-        if (request.ContentTypeId.EndsWith("s"))
-        {
-            request.ContentTypeId = request.ContentTypeId[..^1];
-        }
+        request.ContentTypeId = ContentTypeUtils.ConvertToGraphQlContentType(request.ContentTypeId);
 
         var languages = await GetAllAvailableLanguagesAsync();
         var targetLocales = languages.Select(l => l.Code).ToList();
@@ -205,11 +201,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             }
             catch (Exception e) when (e.Message.Contains("locale is already used"))
             {
-                var singularContentTypeId = metadata.ContentTypeId;
-                if (singularContentTypeId.EndsWith("s"))
-                {
-                    singularContentTypeId = metadata.ContentTypeId[..^1];
-                }
+                var singularContentTypeId = ContentTypeUtils.ConvertToGraphQlContentType(metadata.ContentTypeId);
                 
                 return await HandleV4LocaleAlreadyUsedAsync(
                     singularContentTypeId,
