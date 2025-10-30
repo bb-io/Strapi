@@ -103,12 +103,19 @@ public class StrapiClient : BlackBirdRestClient
             return new PluginApplicationException($"Status code: {response.StatusCode}, content: {response.Content}");
         }
 
-        var error = JsonConvert.DeserializeObject<ErrorDto>(response.Content!);
-        if(error is null)
+        try
         {
-            return new PluginApplicationException(response.Content);
-        }
+            var error = JsonConvert.DeserializeObject<ErrorDto>(response.Content!);
+            if(error is null)
+            {
+                return new PluginApplicationException(response.Content);
+            }
 
-        return new PluginApplicationException(error.ToString());
+            return new PluginApplicationException(error.ToString());
+        }
+        catch (Exception)
+        {
+            return new PluginApplicationException($"Status code: {response.StatusCode}, content: {response.Content}");
+        }
     }
 }
