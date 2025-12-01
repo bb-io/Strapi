@@ -67,9 +67,9 @@ public class ContentActionsTests : TestBase
         // Arrange
         var identifier = new ContentLanguageIdentifier
         {
-            ContentTypeId = "animals",
-            ContentId = "421",
-            Language = "en"
+            ContentTypeId = "learns",
+            ContentId = "9047",
+            //Language = "en"
         };
 
         // Act
@@ -115,10 +115,10 @@ public class ContentActionsTests : TestBase
         {
             Content = new FileReference
             {
-                Name = "421.html",
+                Name = "1229047.html",
                 ContentType = "text/html"
             },
-            Locale = "fr",
+            Locale = "fr-FR1",
             StrapiVersion = "v4"
         };
 
