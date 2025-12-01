@@ -24,6 +24,7 @@ public static class JsonToHtmlConverter
 
     public static string ConvertToHtml(string json, string? contentId, string contentType, IEnumerable<string>? nonLocalizableFields, IEnumerable<string>? uniqueFields)
     {
+        // Create a working copy for processing (will keep base64 for visible content)
         var jsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
         foreach (var field in uniqueFields ?? Array.Empty<string>())
         {
@@ -42,9 +43,15 @@ public static class JsonToHtmlConverter
             throw new ArgumentException("Invalid JSON structure. Expected 'data' property.");
         }
 
-        var doc = new HtmlDocument();
-        CreateHtmlStructure(doc, jsonObj, dataObj, contentId, contentType);
+        // Create a copy for 'original' attribute with placeholders instead of base64
+        var originalJsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
+        RemoveBase64Images(originalJsonObj);
 
+        var doc = new HtmlDocument();
+        // Pass JSON with placeholders to store in 'original' attribute
+        CreateHtmlStructure(doc, originalJsonObj, dataObj, contentId, contentType);
+
+        // Process with full base64 images for visible content
         ProcessJsonObject(dataObj, doc.DocumentNode.SelectSingleNode("//body"), doc, "data", nonLocalizableFields);
         return "<!DOCTYPE html>\n" + doc.DocumentNode.OuterHtml;
     }
@@ -352,5 +359,98 @@ public static class JsonToHtmlConverter
     private static string AppendJsonPath(string basePath, string propertyName)
     {
         return string.IsNullOrEmpty(basePath) ? propertyName : $"{basePath}.{propertyName}";
+    }
+
+    private static void RemoveBase64Images(JToken token)
+    {
+        if (token.Type == JTokenType.Object)
+        {
+            var obj = (JObject)token;
+            foreach (var property in obj.Properties().ToList())
+            {
+                // Check if this is a string property that might contain HTML
+                if (property.Value.Type == JTokenType.String)
+                {
+                    var value = property.Value.ToString();
+                    
+                    // Check if value contains HTML with base64 images
+                    if (ContainsHtmlWithBase64Images(value))
+                    {
+                        // Clean base64 images from the HTML content
+                        property.Value = CleanBase64ImagesFromHtml(value);
+                    }
+                    // Also check direct base64 image in src/url properties
+                    else if ((property.Name.Equals("src", StringComparison.OrdinalIgnoreCase) || 
+                              property.Name.Equals("url", StringComparison.OrdinalIgnoreCase)) &&
+                             IsBase64Image(value))
+                    {
+                        property.Value = "[BASE64_IMAGE_PLACEHOLDER]";
+                    }
+                }
+                else
+                {
+                    RemoveBase64Images(property.Value);
+                }
+            }
+        }
+        else if (token.Type == JTokenType.Array)
+        {
+            var array = (JArray)token;
+            foreach (var item in array)
+            {
+                RemoveBase64Images(item);
+            }
+        }
+    }
+
+    private static bool ContainsHtmlWithBase64Images(string value)
+    {
+        if (string.IsNullOrEmpty(value) || !value.Contains("<"))
+            return false;
+
+        return value.Contains("data:image/", StringComparison.OrdinalIgnoreCase) &&
+               value.Contains("base64", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string CleanBase64ImagesFromHtml(string htmlContent)
+    {
+        try
+        {
+            var doc = new HtmlDocument();
+            doc.LoadHtml(htmlContent);
+
+            // Find all img tags
+            var imgNodes = doc.DocumentNode.SelectNodes("//img");
+            if (imgNodes != null)
+            {
+                foreach (var img in imgNodes)
+                {
+                    var src = img.GetAttributeValue("src", string.Empty);
+                    if (IsBase64Image(src))
+                    {
+                        // Replace base64 src with placeholder
+                        img.SetAttributeValue("src", "[BASE64_IMAGE_PLACEHOLDER]");
+                    }
+                }
+            }
+
+            return doc.DocumentNode.OuterHtml;
+        }
+        catch
+        {
+            // If parsing fails, return original content
+            return htmlContent;
+        }
+    }
+
+    private static bool IsBase64Image(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        // Check if it's a data URI with base64 image
+        return value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase) &&
+               value.Contains("base64", StringComparison.OrdinalIgnoreCase) &&
+               value.Length > 1000; // Only replace if it's actually large (>1KB)
     }
 }

@@ -40,6 +40,7 @@ public static class HtmlToJsonConverter
     public static string ConvertToJson(string html, string strapiVersion, string targetLocale)
     {
         JObject jsonObj;
+        JObject originalJsonObj;
         try
         {
             var doc = new HtmlDocument();
@@ -58,6 +59,7 @@ public static class HtmlToJsonConverter
             }
 
             var originalJson = HttpUtility.HtmlDecode(originalJsonEncoded);
+            originalJsonObj = JsonConvert.DeserializeObject<JObject>(originalJson)!;
             jsonObj = JsonConvert.DeserializeObject<JObject>(originalJson)!;
 
             if (jsonObj == null)
@@ -111,6 +113,13 @@ public static class HtmlToJsonConverter
             {
                 dataObj.Add("locale", targetLocale);
             }
+        }
+
+        // Restore base64 images from the original JSON after all processing is complete
+        var originalDataObj = originalJsonObj["data"] as JObject;
+        if (originalDataObj != null)
+        {
+            RestoreBase64Images(dataObj, originalDataObj);
         }
 
         if (strapiVersion == StrapiVersions.V4)
@@ -309,5 +318,116 @@ public static class HtmlToJsonConverter
             IsArrayIndex = isArrayIndex;
             Index = index;
         }
+    }
+
+    private static void RestoreBase64Images(JToken currentToken, JToken originalToken)
+    {
+        if (currentToken.Type != originalToken.Type)
+            return;
+
+        if (currentToken.Type == JTokenType.Object)
+        {
+            var currentObj = (JObject)currentToken;
+            var originalObj = (JObject)originalToken;
+
+            foreach (var property in currentObj.Properties().ToList())
+            {
+                if (!originalObj.ContainsKey(property.Name))
+                    continue;
+
+                var originalValue = originalObj[property.Name];
+                
+                // Check if this is a string property
+                if (property.Value.Type == JTokenType.String && originalValue?.Type == JTokenType.String)
+                {
+                    var currentStr = property.Value.ToString();
+                    var originalStr = originalValue.ToString();
+                    
+                    // Check if it contains HTML with placeholder images
+                    if (currentStr.Contains("[BASE64_IMAGE_PLACEHOLDER]") && 
+                        originalStr.Contains("data:image/"))
+                    {
+                        // Restore base64 images in HTML content
+                        property.Value = RestoreBase64ImagesInHtml(currentStr, originalStr);
+                    }
+                    // Also handle direct src/url properties
+                    else if ((property.Name.Equals("src", StringComparison.OrdinalIgnoreCase) ||
+                              property.Name.Equals("url", StringComparison.OrdinalIgnoreCase)) &&
+                             currentStr == "[BASE64_IMAGE_PLACEHOLDER]" &&
+                             IsBase64Image(originalStr))
+                    {
+                        property.Value = originalValue;
+                    }
+                }
+                else if (property.Value.Type == JTokenType.Object || property.Value.Type == JTokenType.Array)
+                {
+                    RestoreBase64Images(property.Value, originalValue!);
+                }
+            }
+        }
+        else if (currentToken.Type == JTokenType.Array)
+        {
+            var currentArray = (JArray)currentToken;
+            var originalArray = (JArray)originalToken;
+
+            for (int i = 0; i < Math.Min(currentArray.Count, originalArray.Count); i++)
+            {
+                RestoreBase64Images(currentArray[i], originalArray[i]);
+            }
+        }
+    }
+
+    private static string RestoreBase64ImagesInHtml(string currentHtml, string originalHtml)
+    {
+        try
+        {
+            var currentDoc = new HtmlDocument();
+            currentDoc.LoadHtml(currentHtml);
+            
+            var originalDoc = new HtmlDocument();
+            originalDoc.LoadHtml(originalHtml);
+
+            // Find all img tags with placeholders in current HTML
+            var currentImgs = currentDoc.DocumentNode.SelectNodes("//img[@src='[BASE64_IMAGE_PLACEHOLDER]']");
+            var originalImgs = originalDoc.DocumentNode.SelectNodes("//img");
+
+            if (currentImgs != null && originalImgs != null)
+            {
+                // Match images by position and restore base64 src
+                int placeholderIndex = 0;
+                int originalIndex = 0;
+                
+                while (placeholderIndex < currentImgs.Count && originalIndex < originalImgs.Count)
+                {
+                    var originalSrc = originalImgs[originalIndex].GetAttributeValue("src", string.Empty);
+                    
+                    if (IsBase64Image(originalSrc))
+                    {
+                        // Restore the base64 image
+                        currentImgs[placeholderIndex].SetAttributeValue("src", originalSrc);
+                        placeholderIndex++;
+                    }
+                    
+                    originalIndex++;
+                }
+            }
+
+            return currentDoc.DocumentNode.OuterHtml;
+        }
+        catch
+        {
+            // If restoration fails, return current content
+            return currentHtml;
+        }
+    }
+
+    private static bool IsBase64Image(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        return value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase) &&
+               value.Contains("base64", StringComparison.OrdinalIgnoreCase) &&
+               value.Length > 1000;
     }
 }
