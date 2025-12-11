@@ -146,13 +146,17 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             throw new PluginMisconfigurationException("Invalid response structure. Expected 'data' property.");
         }
         
+        // For v4: data.attributes, for v5: data directly
         var contentObj = dataObj["attributes"] as JObject ?? dataObj;
-        var locale = GetCaseInsensitiveValue(contentObj, "locale")?.ToString() 
+        
+        // Try to get locale from both locations (v4 has it in attributes, v5 has it at data level)
+        var locale = GetCaseInsensitiveValue(dataObj, "locale")?.ToString()
+                     ?? GetCaseInsensitiveValue(contentObj, "locale")?.ToString() 
                      ?? identifier.Language 
                      ?? "en";
         
-        var documentId = GetCaseInsensitiveValue(contentObj, "documentId")?.ToString() 
-                         ?? GetCaseInsensitiveValue(dataObj, "documentId")?.ToString();
+        var documentId = GetCaseInsensitiveValue(dataObj, "documentId")?.ToString()
+                         ?? GetCaseInsensitiveValue(contentObj, "documentId")?.ToString();
         var id = GetCaseInsensitiveValue(dataObj, "id")?.ToString();
         var ucid = documentId ?? id ?? identifier.ContentId;
         

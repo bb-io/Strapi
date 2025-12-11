@@ -93,6 +93,8 @@ public static class JsonToHtmlConverter
             AddMetaTag(doc, headNode, MetadataKeys.ContentName, metadata.ContentName);
         }
         
+        AddMetaTag(doc, headNode, MetadataKeys.ContentType, metadata.ContentTypeId);
+        
         if (!string.IsNullOrEmpty(metadata.AdminUrl))
         {
             AddMetaTag(doc, headNode, MetadataKeys.AdminUrl, metadata.AdminUrl);
