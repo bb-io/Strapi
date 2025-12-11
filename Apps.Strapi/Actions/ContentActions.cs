@@ -17,6 +17,9 @@ using Models.Responses;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using Apps.Strapi.Models.Records;
+using Blackbird.Filters.Constants;
+using Blackbird.Filters.Extensions;
 
 namespace Apps.Strapi.Actions;
 
@@ -135,21 +138,68 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
 
         var response = await Client.ExecuteWithErrorHandling(request);
-        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, identifier.ContentId, identifier.ContentTypeId, downloadContentRequest.ExcludeFields, downloadContentRequest.UniqueFields);
+        var responseJson = JObject.Parse(response.Content!);
+        var dataObj = responseJson["data"] as JObject;
+        
+        if (dataObj == null)
+        {
+            throw new PluginMisconfigurationException("Invalid response structure. Expected 'data' property.");
+        }
+        
+        var contentObj = dataObj["attributes"] as JObject ?? dataObj;
+        var locale = GetCaseInsensitiveValue(contentObj, "locale")?.ToString() 
+                     ?? identifier.Language 
+                     ?? "en";
+        
+        var documentId = GetCaseInsensitiveValue(contentObj, "documentId")?.ToString() 
+                         ?? GetCaseInsensitiveValue(dataObj, "documentId")?.ToString();
+        var id = GetCaseInsensitiveValue(dataObj, "id")?.ToString();
+        var ucid = documentId ?? id ?? identifier.ContentId;
+        
+        var title = GetCaseInsensitiveValue(contentObj, "name")?.ToString()
+                    ?? GetCaseInsensitiveValue(contentObj, "title")?.ToString()
+                    ?? identifier.ContentId 
+                    ?? identifier.ContentTypeId;
+        
+        var baseUrl = Credentials.First(c => c.KeyName == CredNames.BaseUrl).Value.Trim('/');
+        var singularContentType = identifier.ContentTypeId.TrimEnd('s');
+        var adminUrl = !string.IsNullOrEmpty(ucid) 
+            ? $"{baseUrl}/admin/content-manager/collection-types/api::{singularContentType}.{singularContentType}/{ucid}"
+            : null;
+        
+        var metadata = new HtmlGenerationMetadata(
+            ContentId: identifier.ContentId,
+            ContentTypeId: identifier.ContentTypeId,
+            Locale: locale,
+            Ucid: ucid,
+            ContentName: title,
+            AdminUrl: adminUrl,
+            BaseUrl: baseUrl
+        );
+        
+        var htmlString = JsonToHtmlConverter.ConvertToHtml(response.Content!, metadata, downloadContentRequest.ExcludeFields, downloadContentRequest.UniqueFields);
         var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(htmlString))
         {
             Position = 0
         };
 
-        var title = JsonToHtmlConverter.ExtractTitle(response.Content!, identifier.ContentId ?? identifier.ContentTypeId);
-        var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{title}.html");
+        var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{identifier.ContentId}.html");
 
         return new(fileReference, identifier.ContentTypeId);
+    }
+    
+    private static JToken? GetCaseInsensitiveValue(JObject? jObject, string propertyName)
+    {
+        if (jObject == null) return null;
+        
+        var property = jObject.Properties()
+            .FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+        return property?.Value;
     }
 
     [Action("Upload content", Description = "Uploads a HTML file to a specific language to localize the content.")]
     [BlueprintActionDefinition(BlueprintAction.UploadContent)]
-    public async Task<DocumentResponse> UploadContentAsync([ActionParameter] UploadContentRequest request)
+    public async Task<UploadContentResponse> UploadContentAsync([ActionParameter] UploadContentRequest request)
     {
         var strapiVersion = request.StrapiVersion ?? "v5";
         if (!StrapiVersions.AllVersions.Contains(strapiVersion))
@@ -164,9 +214,15 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         memoryStream.Position = 0;
 
         var htmlString = System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
-        if (Xliff2Serializer.IsXliff2(htmlString))
+        
+        // Check if input is XLIFF
+        var isXliff = Xliff2Serializer.IsXliff2(htmlString);
+        Transformation? transformation = null;
+        
+        if (isXliff)
         {
-            htmlString = Transformation.Parse(htmlString, request.Content.Name).Target().Serialize();
+            transformation = Transformation.Parse(htmlString, request.Content.Name);
+            htmlString = transformation.Target().Serialize();
             if (htmlString == null) throw new PluginMisconfigurationException("XLIFF did not contain any files");
         }
         
@@ -184,6 +240,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             endpoint += $"/{metadata.ContentId}";
         }
 
+        DocumentResponse result;
         if (StrapiVersions.V5 == strapiVersion)
         {
             var apiRequest = new RestRequest(endpoint, Method.Put)
@@ -191,19 +248,19 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
                 .AddBody(jsonContent, ContentType.Json);
 
             var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            return jObject.ToFullContentResponse(metadata.ContentTypeId);
+            result = jObject.ToFullContentResponse(metadata.ContentTypeId);
         }
         else if (StrapiVersions.V4 == strapiVersion)
         {
             try
             {
-                return await LocalizeV4Async(endpoint, jsonContent, metadata.ContentTypeId);
+                result = await LocalizeV4Async(endpoint, jsonContent, metadata.ContentTypeId);
             }
             catch (Exception e) when (e.Message.Contains("locale is already used"))
             {
                 var singularContentTypeId = ContentTypeUtils.ConvertToGraphQlContentType(metadata.ContentTypeId);
                 
-                return await HandleV4LocaleAlreadyUsedAsync(
+                result = await HandleV4LocaleAlreadyUsedAsync(
                     singularContentTypeId,
                     metadata.ContentTypeId,
                     metadata.ContentId!,
@@ -215,6 +272,37 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         {
             throw new PluginMisconfigurationException($"Operation not supported yet for Strapi version '{strapiVersion}'. Ask blackbird support to implement it.");
         }
+        
+        var uploadContentResponse = new UploadContentResponse
+        {
+            Id = result.Id,
+            ContentTypeId = result.ContentTypeId,
+            Title = result.Title,
+            CreatedAt = result.CreatedAt,
+            UpdatedAt = result.UpdatedAt,
+            PublishedAt = result.PublishedAt,
+            Locale = result.Locale
+        };
+        
+        if (isXliff && transformation != null)
+        {
+            var baseUrl = Credentials.First(c => c.KeyName == CredNames.BaseUrl).Value.Trim('/');
+            var singularContentType = metadata.ContentTypeId.TrimEnd('s');
+            
+            transformation.TargetSystemReference.ContentId = result.Id;
+            transformation.TargetSystemReference.ContentName = result.Title ?? metadata.ContentTypeId;
+            transformation.TargetSystemReference.AdminUrl = $"{baseUrl}/admin/content-manager/collection-types/api::{singularContentType}.{singularContentType}/{result.Id}";
+            transformation.TargetSystemReference.SystemName = "Strapi";
+            transformation.TargetSystemReference.SystemRef = baseUrl;
+            transformation.TargetLanguage = request.Locale;
+            uploadContentResponse.Content = await fileManagementClient.UploadAsync(transformation.Serialize().ToStream(), MediaTypes.Xliff, transformation.XliffFileName);
+        }
+        else
+        {
+            uploadContentResponse.Content = request.Content;
+        }
+        
+        return uploadContentResponse;
     }
 
     [Action("Update content", Description = "Updates a content by ID.")]
