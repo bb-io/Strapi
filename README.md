@@ -77,6 +77,10 @@ There is no way to retrieve a list of content types from the API, so it's not po
 
 You can get the content type ID from the Strapi UI. Typically, multiple content types will look like: `'users'`, `'articles'`, `'pages'`, and so on.
 
+## Blacklake support
+
+This app is supported in Blacklake, but it is fully supported with all features only in Strapi v5. If you are using Strapi v4, some capabilities — such as properly separating different locales for a single entry — may not work as expected due to limitations in the Strapi v4 API.
+
 ## Feedback
 
 Do you want to use this app or do you have feedback on our implementation? Reach out to us using the [established channels](https://www.blackbird.io/) or create an issue.
