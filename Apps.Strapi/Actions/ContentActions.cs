@@ -146,14 +146,10 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             throw new PluginMisconfigurationException("Invalid response structure. Expected 'data' property.");
         }
         
-        // For v4: data.attributes, for v5: data directly
         var contentObj = dataObj["attributes"] as JObject ?? dataObj;
-        
-        // Try to get locale from both locations (v4 has it in attributes, v5 has it at data level)
         var locale = GetCaseInsensitiveValue(dataObj, "locale")?.ToString()
                      ?? GetCaseInsensitiveValue(contentObj, "locale")?.ToString() 
-                     ?? identifier.Language 
-                     ?? "en";
+                     ?? identifier.Language;
         
         var documentId = GetCaseInsensitiveValue(dataObj, "documentId")?.ToString()
                          ?? GetCaseInsensitiveValue(contentObj, "documentId")?.ToString();
@@ -188,17 +184,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         };
 
         var fileReference = await fileManagementClient.UploadAsync(memoryStream, "text/html", $"{identifier.ContentId}.html");
-
         return new(fileReference, identifier.ContentTypeId);
-    }
-    
-    private static JToken? GetCaseInsensitiveValue(JObject? jObject, string propertyName)
-    {
-        if (jObject == null) return null;
-        
-        var property = jObject.Properties()
-            .FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
-        return property?.Value;
     }
 
     [Action("Upload content", Description = "Uploads a HTML file to a specific language to localize the content.")]
@@ -243,7 +229,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         {
             endpoint += $"/{metadata.ContentId}";
         }
-
+        
         DocumentResponse result;
         if (StrapiVersions.V5 == strapiVersion)
         {
@@ -336,6 +322,18 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}", Method.Delete);
         await Client.ExecuteWithErrorHandling(apiRequest);
+    }
+    
+    private static JToken? GetCaseInsensitiveValue(JObject? jObject, string propertyName)
+    {
+        if (jObject == null)
+        {
+            return null;
+        }
+        
+        var property = jObject.Properties()
+            .FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+        return property?.Value;
     }
     
     private async Task<DocumentResponse> LocalizeV4Async(string endpoint, string jsonContent, string contentTypeId)
