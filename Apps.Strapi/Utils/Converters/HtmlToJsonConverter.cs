@@ -43,6 +43,8 @@ public static class HtmlToJsonConverter
         JObject originalJsonObj;
         try
         {
+            html = NormalizeHtmlTags(html);
+            
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
 
@@ -128,6 +130,19 @@ public static class HtmlToJsonConverter
         }
         
         return JsonConvert.SerializeObject(new { data = dataObj });
+    }
+
+    private static string NormalizeHtmlTags(string html)
+    {
+        // Replace fullwidth characters that LLM models sometimes produce. These replacements fix corrupted HTML tags from translation
+        return html
+            .Replace("＜", "<")     // Fullwidth less-than
+            .Replace("＞", ">")     // Fullwidth greater-than
+            .Replace("＂", "\"")    // Fullwidth quotation mark
+            .Replace("'", "'")      // Left single quotation mark
+            .Replace("'", "'")      // Right single quotation mark
+            .Replace("／", "/")     // Fullwidth solidus
+            .Replace("＝", "=");    // Fullwidth equals sign
     }
 
     private static void ProcessPropertyValues(HtmlDocument doc, JObject jsonObj)

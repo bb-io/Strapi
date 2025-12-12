@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Web;
 using Apps.Strapi.Constants;
+using Apps.Strapi.Models.Records;
 
 namespace Apps.Strapi.Utils.Converters;
 
@@ -22,7 +23,7 @@ public static class JsonToHtmlConverter
         return title;
     }
 
-    public static string ConvertToHtml(string json, string? contentId, string contentType, IEnumerable<string>? nonLocalizableFields, IEnumerable<string>? uniqueFields)
+    public static string ConvertToHtml(string json, HtmlGenerationMetadata metadata, IEnumerable<string>? nonLocalizableFields, IEnumerable<string>? uniqueFields)
     {
         // Create a working copy for processing (will keep base64 for visible content)
         var jsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
@@ -39,7 +40,7 @@ public static class JsonToHtmlConverter
 
         if (dataObj == null)
         {
-            ExceptionExtensions.ThrowIfNullOrEmpty(contentId, "Content ID");
+            ExceptionExtensions.ThrowIfNullOrEmpty(metadata.ContentId, "Content ID");
             throw new ArgumentException("Invalid JSON structure. Expected 'data' property.");
         }
 
@@ -49,34 +50,69 @@ public static class JsonToHtmlConverter
 
         var doc = new HtmlDocument();
         // Pass JSON with placeholders to store in 'original' attribute
-        CreateHtmlStructure(doc, originalJsonObj, dataObj, contentId, contentType);
+        CreateHtmlStructure(doc, originalJsonObj, dataObj, metadata);
 
         // Process with full base64 images for visible content
-        ProcessJsonObject(dataObj, doc.DocumentNode.SelectSingleNode("//body"), doc, "data", nonLocalizableFields);
+        var bodyNode = doc.DocumentNode.SelectSingleNode("//body");
+        if (bodyNode != null)
+        {
+            // Detect if it's v4 (has attributes) or v5 (flat structure)
+            var hasAttributes = dataObj["attributes"] != null;
+            var ucid = metadata.Ucid ?? metadata.ContentId ?? "unknown";
+            var contentTypeId = metadata.ContentTypeId;
+            
+            ProcessJsonObject(dataObj, bodyNode, doc, "data", nonLocalizableFields, ucid, contentTypeId, hasAttributes);
+        }
         return "<!DOCTYPE html>\n" + doc.DocumentNode.OuterHtml;
     }
 
-    private static void CreateHtmlStructure(HtmlDocument doc, JObject jsonObj, JObject dataObj, string? contentId, string contentType)
+    private static void CreateHtmlStructure(HtmlDocument doc, JObject jsonObj, JObject dataObj, HtmlGenerationMetadata metadata)
     {
         var htmlNode = CreateElement(doc, "html");
+        htmlNode.SetAttributeValue("lang", metadata.Locale);
         doc.DocumentNode.AppendChild(htmlNode);
 
         var headNode = CreateElement(doc, "head");
         htmlNode.AppendChild(headNode);
 
         AddMetaTag(doc, headNode, "charset", "UTF-8");
-        if (!string.IsNullOrEmpty(contentId))
+        if (!string.IsNullOrEmpty(metadata.ContentId))
         {
-            AddMetaTag(doc, headNode, MetadataKeys.ContentId, contentId);
+            AddMetaTag(doc, headNode, MetadataKeys.ContentId, metadata.ContentId);
         }
 
-        AddMetaTag(doc, headNode, MetadataKeys.ContentType, contentType);
-
-        string locale = dataObj["locale"]?.ToString() ?? "en";
-        AddMetaTag(doc, headNode, MetadataKeys.Locale, locale);
+        AddMetaTag(doc, headNode, MetadataKeys.Locale, metadata.Locale);
+        
+        if (!string.IsNullOrEmpty(metadata.Ucid))
+        {
+            AddMetaTag(doc, headNode, MetadataKeys.Ucid, metadata.Ucid);
+        }
+        
+        if (!string.IsNullOrEmpty(metadata.ContentName))
+        {
+            AddMetaTag(doc, headNode, MetadataKeys.ContentName, metadata.ContentName);
+        }
+        
+        AddMetaTag(doc, headNode, MetadataKeys.ContentType, metadata.ContentTypeId);
+        
+        if (!string.IsNullOrEmpty(metadata.AdminUrl))
+        {
+            AddMetaTag(doc, headNode, MetadataKeys.AdminUrl, metadata.AdminUrl);
+        }
+        
+        AddMetaTag(doc, headNode, MetadataKeys.SystemName, "Strapi");
+        AddMetaTag(doc, headNode, MetadataKeys.SystemRef, metadata.BaseUrl);
 
         var bodyNode = CreateElement(doc, "body");
         bodyNode.SetAttributeValue("original", HttpUtility.HtmlEncode(jsonObj.ToString(Formatting.None)));
+        bodyNode.SetAttributeValue("its-rev-tool", "Strapi");
+        bodyNode.SetAttributeValue("its-rev-tool-ref", metadata.BaseUrl);
+        
+        if (!string.IsNullOrEmpty(metadata.UpdatedBy))
+        {
+            bodyNode.SetAttributeValue("its-rev-person", metadata.UpdatedBy);
+        }
+        
         htmlNode.AppendChild(bodyNode);
     }
 
@@ -95,7 +131,7 @@ public static class JsonToHtmlConverter
         parentNode.AppendChild(metaTag);
     }
 
-    private static void ProcessJsonObject(JObject jsonObj, HtmlNode parentNode, HtmlDocument doc, string jsonPath, IEnumerable<string>? nonLocalizableFields)
+    private static void ProcessJsonObject(JObject jsonObj, HtmlNode parentNode, HtmlDocument doc, string jsonPath, IEnumerable<string>? nonLocalizableFields, string ucid, string contentTypeId, bool isV4)
     {
         foreach (var property in jsonObj.Properties())
         {
@@ -109,14 +145,16 @@ public static class JsonToHtmlConverter
             if (property.Value?.Type == JTokenType.Object)
             {
                 var container = CreateContainerElement(doc, "div", "json-object", currentPath);
+                AddBlackbirdKey(container, property.Name, jsonPath, ucid, contentTypeId, isV4);
                 parentNode.AppendChild(container);
-                ProcessJsonObject((JObject)property.Value, container, doc, currentPath, nonLocalizableFields);
+                ProcessJsonObject((JObject)property.Value, container, doc, currentPath, nonLocalizableFields, ucid, contentTypeId, isV4);
             }
             else if (property.Value?.Type == JTokenType.Array)
             {
                 var container = CreateContainerElement(doc, "div", "json-array", currentPath);
+                AddBlackbirdKey(container, property.Name, jsonPath, ucid, contentTypeId, isV4);
                 parentNode.AppendChild(container);
-                ProcessJsonArray((JArray)property.Value, container, doc, currentPath, nonLocalizableFields);
+                ProcessJsonArray((JArray)property.Value, container, doc, currentPath, nonLocalizableFields, ucid, contentTypeId, isV4);
             }
             else if (property.Value?.Type == JTokenType.String)
             {
@@ -127,15 +165,29 @@ public static class JsonToHtmlConverter
                     valueDiv.SetAttributeValue("class", "property-value");
                     valueDiv.SetAttributeValue("data-json-path", currentPath);
                     valueDiv.SetAttributeValue("data-html", "true");
+                    AddBlackbirdKey(valueDiv, property.Name, jsonPath, ucid, contentTypeId, isV4);
                     valueDiv.InnerHtml = content;
                     parentNode.AppendChild(valueDiv);
                 }
                 else
                 {
                     var container = MarkdownConverter.ToHtml(doc, currentPath, property.Value);
+                    AddBlackbirdKey(container, property.Name, jsonPath, ucid, contentTypeId, isV4);
                     parentNode.AppendChild(container);
                 }
             }
+        }
+    }
+    
+    private static void AddBlackbirdKey(HtmlNode node, string propertyName, string currentJsonPath, string ucid, string contentTypeId, bool isV4)
+    {
+        // For v4: add blackbird-key for fields inside attributes (data.attributes level)
+        // For v5: add blackbird-key for fields at data level
+        bool shouldAddKey = isV4 ? currentJsonPath == "data.attributes" : currentJsonPath == "data";
+        
+        if (shouldAddKey)
+        {
+            node.SetAttributeValue("data-blackbird-key", $"{contentTypeId}.{ucid}.{propertyName}");
         }
     }
 
@@ -149,7 +201,7 @@ public static class JsonToHtmlConverter
                content.Contains("<u") && content.Contains("/u>");
     }
 
-    private static void ProcessJsonArray(JArray array, HtmlNode parentNode, HtmlDocument doc, string jsonPath, IEnumerable<string>? nonLocalizableFields)
+    private static void ProcessJsonArray(JArray array, HtmlNode parentNode, HtmlDocument doc, string jsonPath, IEnumerable<string>? nonLocalizableFields, string ucid, string contentTypeId, bool isV4)
     {
         if (IsRichTextEditorData(array))
         {
@@ -167,11 +219,11 @@ public static class JsonToHtmlConverter
 
             if (item.Type == JTokenType.Object)
             {
-                ProcessJsonObject((JObject)item, itemContainer, doc, itemPath, nonLocalizableFields);
+                ProcessJsonObject((JObject)item, itemContainer, doc, itemPath, nonLocalizableFields, ucid, contentTypeId, isV4);
             }
             else if (item.Type == JTokenType.Array)
             {
-                ProcessJsonArray((JArray)item, itemContainer, doc, itemPath, nonLocalizableFields);
+                ProcessJsonArray((JArray)item, itemContainer, doc, itemPath, nonLocalizableFields, ucid, contentTypeId, isV4);
             }
             else if (item.Type == JTokenType.String)
             {
@@ -359,6 +411,24 @@ public static class JsonToHtmlConverter
     private static string AppendJsonPath(string basePath, string propertyName)
     {
         return string.IsNullOrEmpty(basePath) ? propertyName : $"{basePath}.{propertyName}";
+    }
+    
+    private static string? GetCaseInsensitiveProperty(JObject obj, params string[] propertyNames)
+    {
+        foreach (var propertyName in propertyNames)
+        {
+            var property = obj.Properties()
+                .FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+            if (property != null && property.Value?.Type == JTokenType.String)
+            {
+                var value = property.Value.ToString();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+        }
+        return null;
     }
 
     private static void RemoveBase64Images(JToken token)
