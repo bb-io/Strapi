@@ -150,31 +150,71 @@ public static class HtmlToJsonConverter
         try
         {
             var propertyValueNodes = doc.DocumentNode.SelectNodes("//span[@class='property-value'] | //div[@class='property-value']");
-            if (propertyValueNodes == null)
-                return;
-
-            foreach (var node in propertyValueNodes)
+            if (propertyValueNodes != null)
             {
-                var jsonPath = node.GetAttributeValue("data-json-path", string.Empty);
-                if (string.IsNullOrEmpty(jsonPath))
+                foreach (var node in propertyValueNodes)
                 {
-                    continue;
-                }
+                    var jsonPath = node.GetAttributeValue("data-json-path", string.Empty);
+                    if (string.IsNullOrEmpty(jsonPath))
+                    {
+                        continue;
+                    }
 
-                var isHtmlContent = node.GetAttributeValue("data-html", string.Empty);
-                if (isHtmlContent == "true")
-                {
-                    UpdateJsonProperty(jsonObj, jsonPath, node.InnerHtml);
-                }
-                else
-                {
-                    UpdateJsonProperty(jsonObj, jsonPath, node.InnerText);
+                    var isHtmlContent = node.GetAttributeValue("data-html", string.Empty);
+                    if (isHtmlContent == "true")
+                    {
+                        UpdateJsonProperty(jsonObj, jsonPath, node.InnerHtml);
+                    }
+                    else
+                    {
+                        UpdateJsonProperty(jsonObj, jsonPath, node.InnerText);
+                    }
                 }
             }
+
+            ProcessBrokenPropertyValues(doc, jsonObj);
         }
         catch (Exception ex) when (ex.Message.Contains("node-set") || ex.Message.Contains("unclosed string"))
         {
             throw new PluginApplicationException("Failed to process property values from HTML. XPath expression failed, likely due to special characters in the HTML content.", ex);
+        }
+    }
+
+    private static void ProcessBrokenPropertyValues(HtmlDocument doc, JObject jsonObj)
+    {
+        try
+        {
+            var brokenNodes = doc.DocumentNode.SelectNodes("//div[@data-blackbird-key][not(@data-json-path)] | //span[@data-blackbird-key][not(@data-json-path)]");
+            if (brokenNodes == null)
+                return;
+
+            foreach (var node in brokenNodes)
+            {
+                var blackbirdKey = node.GetAttributeValue("data-blackbird-key", string.Empty);
+                if (string.IsNullOrEmpty(blackbirdKey))
+                    continue;
+
+                var keyParts = blackbirdKey.Split('.');
+                if (keyParts.Length < 3)
+                    continue;
+
+                var fieldName = keyParts[keyParts.Length - 1];
+                var jsonPath = $"data.attributes.{fieldName}";
+
+                var existingToken = jsonObj.SelectToken(jsonPath);
+                if (existingToken != null)
+                {
+                    var translatedContent = node.InnerText?.Trim();
+                    if (!string.IsNullOrEmpty(translatedContent))
+                    {
+                        UpdateJsonProperty(jsonObj, jsonPath, translatedContent);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Silently fail if fallback processing doesn't work
         }
     }
 
