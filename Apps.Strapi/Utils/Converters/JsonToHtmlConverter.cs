@@ -198,7 +198,19 @@ public static class JsonToHtmlConverter
                content.Contains("<span") && content.Contains("/span>") ||
                content.Contains("<strong") && content.Contains("/strong>") ||
                content.Contains("<em") && content.Contains("/em>") ||
-               content.Contains("<u") && content.Contains("/u>");
+               content.Contains("<u") && content.Contains("/u>") ||
+               content.Contains("<h1") && content.Contains("/h1>") ||
+               content.Contains("<h2") && content.Contains("/h2>") ||
+               content.Contains("<h3") && content.Contains("/h3>") ||
+               content.Contains("<h4") && content.Contains("/h4>") ||
+               content.Contains("<h5") && content.Contains("/h5>") ||
+               content.Contains("<h6") && content.Contains("/h6>") ||
+               content.Contains("<H1") && content.Contains("/H1>") ||
+               content.Contains("<H2") && content.Contains("/H2>") ||
+               content.Contains("<H3") && content.Contains("/H3>") ||
+               content.Contains("<H4") && content.Contains("/H4>") ||
+               content.Contains("<H5") && content.Contains("/H5>") ||
+               content.Contains("<H6") && content.Contains("/H6>");
     }
 
     private static void ProcessJsonArray(JArray array, HtmlNode parentNode, HtmlDocument doc, string jsonPath, IEnumerable<string>? nonLocalizableFields, string ucid, string contentTypeId, bool isV4)
