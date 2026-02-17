@@ -15,9 +15,9 @@ namespace Apps.Strapi.Api;
 public class StrapiClient : BlackBirdRestClient
 {
     private readonly AsyncRetryPolicy _retryPolicy = Policy
-        .Handle<Exception>(x => x.Message.Contains("An error occurred while sending the request.") ||
-                                x.Message.Contains("Rate limit exceeded"))
-        .WaitAndRetryAsync(3, (i) => TimeSpan.FromSeconds(Math.Pow(2, i)));
+        .Handle<Exception>(x => x.Message.Contains("An error occurred while sending the request.") || x.Message.Contains("Rate limit exceeded") 
+            || x.Message.Contains("GatewayTimeout", StringComparison.InvariantCultureIgnoreCase) || x.Message.Contains("BadGateway", StringComparison.InvariantCultureIgnoreCase))
+        .WaitAndRetryAsync(4, (i) => TimeSpan.FromSeconds(Math.Pow(2, i)));
     
     public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> credentialsProviders) : base(new()
     {
