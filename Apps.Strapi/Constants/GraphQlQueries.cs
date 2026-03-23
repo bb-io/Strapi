@@ -7,7 +7,7 @@ public class GraphQlQueries
             data {
                 attributes {
                     locale
-                    localizations {
+                    localizations(pagination: { limit: -1 }) {
                         data {
                             id
                             attributes {
