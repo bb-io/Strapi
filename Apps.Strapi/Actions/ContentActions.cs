@@ -67,14 +67,13 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentTypeId, "Content type ID");
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentId, "Content ID");
-        request.ContentTypeId = ContentTypeUtils.ConvertToGraphQlContentType(request.ContentTypeId);
 
         var languages = await GetAllAvailableLanguagesAsync();
         var targetLocales = languages.Select(l => l.Code).ToList();
         if (request.StrapiVersion == StrapiVersions.V4)
         {
             var response = await GetLocalizationObjectsV4Async(request);
-            var locales = MissingLocalesResponse.GetLocalesFromJObject(response, request.ContentTypeId);
+            var locales = MissingLocalesResponse.GetLocalesFromJObject(response);
             var missingLocales = MissingLocalesResponse.GetMissingLocales(locales, targetLocales);
             return new MissingLocalesResponse(missingLocales, locales);
         }
@@ -242,21 +241,12 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
         else if (StrapiVersions.V4 == strapiVersion)
         {
-            try
-            {
-                result = await LocalizeV4Async(endpoint, jsonContent, metadata.ContentTypeId);
-            }
-            catch (Exception e) when (e.Message.Contains("locale is already used"))
-            {
-                var singularContentTypeId = ContentTypeUtils.ConvertToGraphQlContentType(metadata.ContentTypeId);
-                
-                result = await HandleV4LocaleAlreadyUsedAsync(
-                    singularContentTypeId,
-                    metadata.ContentTypeId,
-                    metadata.ContentId!,
-                    jsonContent,
-                    request.Locale);
-            }
+            result = await LocalizeOrUpdateV4Async(
+                endpoint,
+                metadata.ContentTypeId,
+                metadata.ContentId,
+                jsonContent,
+                request.Locale);
         }
         else
         {
@@ -346,35 +336,51 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         return jObject.ToContentResponse(contentTypeId);
     }
 
-    private async Task<DocumentResponse> HandleV4LocaleAlreadyUsedAsync(
-        string singularContentTypeId,
-        string pluralContentTypeId,
-        string contentId,
+    private async Task<DocumentResponse> LocalizeOrUpdateV4Async(
+        string endpoint,
+        string contentTypeId,
+        string? contentId,
         string jsonContent,
+        string targetLanguage)
+    {
+        if (string.IsNullOrEmpty(contentId))
+        {
+            return await LocalizeV4Async(endpoint, jsonContent, contentTypeId);
+        }
+
+        var existingLocalization = await GetExistingLocalizationV4Async(contentTypeId, contentId, targetLanguage);
+        if (existingLocalization == null)
+        {
+            return await LocalizeV4Async(endpoint, jsonContent, contentTypeId);
+        }
+
+        return await UpdateV4LocalizationAsync(contentTypeId, existingLocalization.Id, jsonContent);
+    }
+
+    private async Task<IdWithLocale?> GetExistingLocalizationV4Async(
+        string contentTypeId,
+        string contentId,
         string targetLanguage)
     {
         var response = await GetLocalizationObjectsV4Async(new()
         {
-            ContentTypeId = singularContentTypeId,
+            ContentTypeId = contentTypeId,
             ContentId = contentId,
             StrapiVersion = StrapiVersions.V4
         });
 
-        var locales = MissingLocalesResponse.GetIdsWithLocalesFromJObject(response, singularContentTypeId);
-        var existingLocale = locales.FirstOrDefault(l => l.Locale == targetLanguage);
-        if (existingLocale != null)
-        {
-            var body = BuildV4UpdateRequestBody(jsonContent);
-            var apiRequest = new RestRequest($"/api/{pluralContentTypeId}/{existingLocale.Id}", Method.Put)
-                .AddStringBody(body, ContentType.Json);
+        var locales = MissingLocalesResponse.GetIdsWithLocalesFromJObject(response);
+        return locales.FirstOrDefault(l => l.Locale == targetLanguage);
+    }
 
-            var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
-            return jObject.ToFullContentResponse(pluralContentTypeId);
-        }
-        else
-        {
-            throw new PluginApplicationException("Failed to find existing localization, although Strapi returned that the locale is already used. Please, ask Blackbird support for further investigation");
-        }
+    private async Task<DocumentResponse> UpdateV4LocalizationAsync(string contentTypeId, string contentId, string jsonContent)
+    {
+        var body = BuildV4UpdateRequestBody(jsonContent);
+        var apiRequest = new RestRequest($"/api/{contentTypeId}/{contentId}", Method.Put)
+            .AddStringBody(body, ContentType.Json);
+
+        var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+        return jObject.ToFullContentResponse(contentTypeId);
     }
     
     private static string BuildV4UpdateRequestBody(string rawJson)
@@ -412,18 +418,14 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         try
         {
-            var query = GraphQlQueries.GetLocalizationObjectsForContentQuery(identifier.ContentTypeId, identifier.ContentId!);
-            var graphQlRequest = new RestRequest("/graphql", Method.Post)
-                .AddJsonBody(new
-                {
-                    query
-                });
+            var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}")
+                .AddQueryParameter("populate", "localizations");
 
-            return await Client.ExecuteWithErrorHandling<JObject>(graphQlRequest);
+            return await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
         }
         catch (Exception ex)
         {
-            throw new PluginApplicationException("Failed to retrieve localization objects through the GraphQL API. Please, verify that graphQL plugin is installed and enabled in your Strapi instance.", ex);
+            throw new PluginApplicationException("Failed to retrieve localization objects through the REST API. Please verify that the content type ID is correct and localization is enabled for this content.", ex);
         }
     }
 

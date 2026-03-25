@@ -12,29 +12,18 @@ public class MissingLocalesResponse(IEnumerable<string> missingLocales, IEnumera
     [Display("Supported locales")]
     public List<string> SupportedLocales { get; set; } = supportedLocales.ToList();
 
-    public static List<string> GetLocalesFromJObject(JObject jObject, string contentType)
+    public static List<string> GetLocalesFromJObject(JObject jObject)
     {
         var locales = new List<string>();
 
         try
         {
-            var locale = jObject["data"]?[contentType]?["data"]?["attributes"]?["locale"]?.ToString();
-            if (!string.IsNullOrEmpty(locale))
+            foreach (var item in GetLocalizationEntries(jObject))
             {
-                locales.Add(locale);
-            }
-
-            var localizationsData = jObject["data"]?[contentType]?["data"]?["attributes"]?["localizations"]?["data"];
-
-            if (localizationsData != null && localizationsData.Type == JTokenType.Array)
-            {
-                foreach (var item in localizationsData)
+                var currentLocale = item["attributes"]?["locale"]?.ToString() ?? item["locale"]?.ToString();
+                if (!string.IsNullOrEmpty(currentLocale))
                 {
-                    var currentLocale = item["attributes"]?["locale"]?.ToString();
-                    if (!string.IsNullOrEmpty(currentLocale))
-                    {
-                        locales.Add(currentLocale);
-                    }
+                    locales.Add(currentLocale);
                 }
             }
         }
@@ -46,31 +35,19 @@ public class MissingLocalesResponse(IEnumerable<string> missingLocales, IEnumera
         return locales.Distinct().ToList();
     }
     
-    public static List<IdWithLocale> GetIdsWithLocalesFromJObject(JObject jObject, string contentType)
+    public static List<IdWithLocale> GetIdsWithLocalesFromJObject(JObject jObject)
     {
         var idsWithLocales = new List<IdWithLocale>();
 
         try
         {
-            var locale = jObject["data"]?[contentType]?["data"]?["attributes"]?["locale"]?.ToString();
-            var id = jObject["data"]?[contentType]?["data"]?["id"]?.ToString();
-            if (!string.IsNullOrEmpty(locale) && !string.IsNullOrEmpty(id))
+            foreach (var item in GetLocalizationEntries(jObject))
             {
-                idsWithLocales.Add(new IdWithLocale(id, locale));
-            }
-
-            var localizationsData = jObject["data"]?[contentType]?["data"]?["attributes"]?["localizations"]?["data"];
-
-            if (localizationsData != null && localizationsData.Type == JTokenType.Array)
-            {
-                foreach (var item in localizationsData)
+                var currentLocale = item["attributes"]?["locale"]?.ToString() ?? item["locale"]?.ToString();
+                var currentId = item["id"]?.ToString();
+                if (!string.IsNullOrEmpty(currentLocale) && !string.IsNullOrEmpty(currentId))
                 {
-                    var currentLocale = item["attributes"]?["locale"]?.ToString();
-                    var currentId = item["id"]?.ToString();
-                    if (!string.IsNullOrEmpty(currentLocale) && !string.IsNullOrEmpty(currentId))
-                    {
-                        idsWithLocales.Add(new IdWithLocale(currentId, currentLocale));
-                    }
+                    idsWithLocales.Add(new IdWithLocale(currentId, currentLocale));
                 }
             }
         }
@@ -87,6 +64,25 @@ public class MissingLocalesResponse(IEnumerable<string> missingLocales, IEnumera
         return targetLocales
             .Where(locale => !existingLocales.Contains(locale))
             .ToList();
+    }
+
+    private static IEnumerable<JObject> GetLocalizationEntries(JObject jObject)
+    {
+        var contentData = jObject["data"] as JObject;
+        if (contentData == null)
+        {
+            return [];
+        }
+
+        var entries = new List<JObject> { contentData };
+        var localizationsData = contentData["attributes"]?["localizations"]?["data"] ?? contentData["localizations"];
+
+        if (localizationsData is JArray localizationsArray)
+        {
+            entries.AddRange(localizationsArray.OfType<JObject>());
+        }
+
+        return entries;
     }
 }
 
