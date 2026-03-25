@@ -4,7 +4,6 @@ using Apps.Strapi.Utils;
 using Blackbird.Applications.SDK.Blueprints;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
-using Models.Responses;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 
@@ -15,7 +14,8 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
 {
     [PollingEvent("On content created or updated", Description = "Polling event that periodically checks for new new or updated content. If the new or updated content is found, it will be returned as a list of content items.")]
     [BlueprintEventDefinition(BlueprintEvent.ContentCreatedOrUpdatedMultiple)]
-    public async Task<PollingEventResponse<DateMemory, SearchContentWithTypeResponse>> OnContentCreatedOrUpdatedAsync(PollingEventRequest<DateMemory> request,
+    public async Task<PollingEventResponse<DateMemory, PollingSearchContentResponse>> OnContentCreatedOrUpdatedAsync(
+        PollingEventRequest<DateMemory> request,
         [PollingEventParameter] ContentFilters contentRequest)
     {
         return await ProcessPollingRequest(request, contentRequest, (apiRequest, lastPollingTime) =>
@@ -26,14 +26,14 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
     }
 
     [PollingEvent("On content published", Description = "Polling event that periodically checks for newly published content. If newly published content is found, it will be returned as a list of content items.")]
-    public async Task<PollingEventResponse<DateMemory, SearchContentWithTypeResponse>> OnContentPublishedAsync(PollingEventRequest<DateMemory> request,
+    public async Task<PollingEventResponse<DateMemory, PollingSearchContentResponse>> OnContentPublishedAsync(PollingEventRequest<DateMemory> request,
         [PollingEventParameter] ContentFilters contentRequest)
     {
         return await ProcessPollingRequest(request, contentRequest, (apiRequest, lastPollingTime) =>
             apiRequest.AddQueryParameter("filters[$or][0][publishedAt][$gte]", lastPollingTime.ToString("yyyy-MM-ddTHH:mm:ssZ")));
     }
 
-    private async Task<PollingEventResponse<DateMemory, SearchContentWithTypeResponse>> ProcessPollingRequest(
+    private async Task<PollingEventResponse<DateMemory, PollingSearchContentResponse>> ProcessPollingRequest(
         PollingEventRequest<DateMemory> request,
         ContentFilters contentRequest,
         Action<RestRequest, DateTime> addFilters)
@@ -51,7 +51,7 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
             };
         }
 
-        var contentList = new List<DocumentWithContentTypeResponse>();
+        var contentList = new List<PollingDocumentResponse>();
         foreach (var contentTypeId in contentRequest.ContentTypeIds)
         {
             try
@@ -62,7 +62,7 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
                 var result = await Client.PaginateAsync<JObject>(apiRequest);
                 var currentContentList = result.ToContentListResponse(contentTypeId);
                 var contentListWithType = currentContentList
-                    .Select(content => new DocumentWithContentTypeResponse(content, contentTypeId))
+                    .Select(content => new PollingDocumentResponse(content))
                     .ToList();
 
                 contentList.AddRange(contentListWithType);
