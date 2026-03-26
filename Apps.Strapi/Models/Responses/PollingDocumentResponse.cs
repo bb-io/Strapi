@@ -5,8 +5,19 @@ using Newtonsoft.Json;
 
 namespace Apps.Strapi.Models.Responses;
 
-public class PollingDocumentResponse(DocumentResponse documentResponse) : BaseDocumentResponse, IDownloadContentInput
+public class PollingDocumentResponse : BaseDocumentResponse, IDownloadContentInput
 {
+    public PollingDocumentResponse(DocumentResponse documentResponse)
+    {
+        ContentId = documentResponse.Id;
+        ContentTypeId = documentResponse.ContentTypeId;
+        Title = documentResponse.Title;
+        CreatedAt = documentResponse.CreatedAt;
+        UpdatedAt = documentResponse.UpdatedAt;
+        PublishedAt = documentResponse.PublishedAt;
+        Locale = documentResponse.Locale;
+    }
+
     [Display("Content ID"), JsonProperty("documentId")]
-    public string ContentId { get; set; } = documentResponse.Id;
+    public string ContentId { get; set; } = string.Empty;
 }
