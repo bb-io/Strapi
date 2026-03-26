@@ -136,6 +136,8 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             request.AddQueryParameter("status", optionalRequest.Status);
         }
 
+        request.AddQueryParameter("populate", "*");
+
         var response = await Client.ExecuteWithErrorHandling(request);
         var responseJson = JObject.Parse(response.Content!);
         var dataObj = responseJson["data"] as JObject;

@@ -15,73 +15,122 @@ public class MissingLocalesResponseTests : TestBase
         string jsonString = @"
         {
             ""data"": {
-                ""article"": {
-                    ""data"": {
-                        ""attributes"": {
-                            ""localizations"": {
-                                ""data"": [
-                                    {
-                                        ""id"": ""316"",
-                                        ""attributes"": {
-                                            ""locale"": ""zh-Hans""
-                                        }
-                                    }
-                                ]
+                ""id"": ""14402"",
+                ""attributes"": {
+                    ""locale"": ""en"",
+                    ""localizations"": {
+                        ""data"": [
+                            {
+                                ""id"": ""316"",
+                                ""attributes"": {
+                                    ""locale"": ""zh-Hans""
+                                }
+                            },
+                            {
+                                ""id"": ""317"",
+                                ""attributes"": {
+                                    ""locale"": ""ja""
+                                }
                             }
-                        }
+                        ]
                     }
                 }
             }
         }";
         
         JObject jObject = JObject.Parse(jsonString);
-        string contentType = "article";
 
         // Act
-        var locales = MissingLocalesResponse.GetLocalesFromJObject(jObject, contentType);
+        var locales = MissingLocalesResponse.GetLocalesFromJObject(jObject);
 
         // Assert
         Assert.IsNotNull(locales);
-        Assert.AreEqual(1, locales.Count);
-        Assert.AreEqual("zh-Hans", locales[0]);
+        CollectionAssert.AreEquivalent(new[] { "en", "zh-Hans", "ja" }, locales);
         
         Console.WriteLine($"Successfully extracted {locales.Count} locale(s): {string.Join(", ", locales)}");
     }
-    
+
     [TestMethod]
-    public void GetLocalesFromJObject_DifferentContentType_ReturnsEmptyList()
+    public void GetIdsWithLocalesFromJObject_ValidRestJson_ReturnsIdsWithLocales()
     {
         // Arrange
         string jsonString = @"
         {
             ""data"": {
-                ""article"": {
-                    ""data"": {
-                        ""attributes"": {
-                            ""localizations"": {
-                                ""data"": [
-                                    {
-                                        ""id"": ""316"",
-                                        ""attributes"": {
-                                            ""locale"": ""zh-Hans""
-                                        }
-                                    }
-                                ]
+                ""id"": ""14402"",
+                ""attributes"": {
+                    ""locale"": ""en"",
+                    ""localizations"": {
+                        ""data"": [
+                            {
+                                ""id"": ""316"",
+                                ""attributes"": {
+                                    ""locale"": ""zh-Hans""
+                                }
+                            },
+                            {
+                                ""id"": ""317"",
+                                ""attributes"": {
+                                    ""locale"": ""ja""
+                                }
                             }
-                        }
+                        ]
                     }
                 }
             }
         }";
         
         JObject jObject = JObject.Parse(jsonString);
-        string contentType = "blog"; // Different content type than what's in the JSON
 
         // Act
-        var locales = MissingLocalesResponse.GetLocalesFromJObject(jObject, contentType);
+        var idsWithLocales = MissingLocalesResponse.GetIdsWithLocalesFromJObject(jObject);
+
+        // Assert
+        Assert.IsNotNull(idsWithLocales);
+        Assert.AreEqual(3, idsWithLocales.Count);
+        CollectionAssert.AreEquivalent(new[] { "en", "zh-Hans", "ja" }, idsWithLocales.Select(x => x.Locale).ToList());
+    }
+
+    [TestMethod]
+    public void GetLocalesFromJObject_MissingData_ReturnsEmptyList()
+    {
+        // Arrange
+        string jsonString = @"
+        {
+            ""meta"": {}
+        }";
+        
+        JObject jObject = JObject.Parse(jsonString);
+
+        // Act
+        var locales = MissingLocalesResponse.GetLocalesFromJObject(jObject);
 
         // Assert
         Assert.IsNotNull(locales);
         Assert.AreEqual(0, locales.Count);
+    }
+    
+    [TestMethod]
+    public void GetLocalesFromJObject_MissingLocalizations_ReturnsCurrentLocaleOnly()
+    {
+        // Arrange
+        string jsonString = @"
+        {
+            ""data"": {
+                ""id"": ""14402"",
+                ""attributes"": {
+                    ""locale"": ""en""
+                }
+            }
+        }";
+        
+        JObject jObject = JObject.Parse(jsonString);
+
+        // Act
+        var locales = MissingLocalesResponse.GetLocalesFromJObject(jObject);
+
+        // Assert
+        Assert.IsNotNull(locales);
+        CollectionAssert.AreEquivalent(new[] { "en" }, locales);
     }
 }
