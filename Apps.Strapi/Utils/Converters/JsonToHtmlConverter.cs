@@ -35,6 +35,8 @@ public static class JsonToHtmlConverter
                 token.Parent?.Remove();
             }
         }
+
+        JsonProperties.RemoveRoundTripIgnoredProperties(jsonObj);
         
         var dataObj = jsonObj["data"] as JObject;
 
@@ -46,6 +48,7 @@ public static class JsonToHtmlConverter
 
         // Create a copy for 'original' attribute with placeholders instead of base64
         var originalJsonObj = JsonConvert.DeserializeObject<JObject>(json)!;
+        JsonProperties.RemoveRoundTripIgnoredProperties(originalJsonObj);
         RemoveBase64Images(originalJsonObj);
 
         var doc = new HtmlDocument();

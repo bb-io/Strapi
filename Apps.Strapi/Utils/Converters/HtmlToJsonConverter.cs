@@ -64,6 +64,9 @@ public static class HtmlToJsonConverter
             originalJsonObj = JsonConvert.DeserializeObject<JObject>(originalJson)!;
             jsonObj = JsonConvert.DeserializeObject<JObject>(originalJson)!;
 
+            JsonProperties.RemoveRoundTripIgnoredProperties(originalJsonObj);
+            JsonProperties.RemoveRoundTripIgnoredProperties(jsonObj);
+
             if (jsonObj == null)
             {
                 throw new PluginApplicationException("Failed to parse original JSON data");
@@ -123,6 +126,8 @@ public static class HtmlToJsonConverter
         {
             RestoreBase64Images(dataObj, originalDataObj);
         }
+
+        NormalizeReferenceFields(dataObj);
 
         if (strapiVersion == StrapiVersions.V4)
         {
@@ -430,6 +435,58 @@ public static class HtmlToJsonConverter
                 RestoreBase64Images(currentArray[i], originalArray[i]);
             }
         }
+    }
+
+    private static void NormalizeReferenceFields(JToken token)
+    {
+        if (token is JObject obj)
+        {
+            foreach (var property in obj.Properties().ToList())
+            {
+                if (TryGetReferenceId(property.Value, out var referenceId))
+                {
+                    property.Value = referenceId;
+                    continue;
+                }
+
+                NormalizeReferenceFields(property.Value);
+            }
+
+            return;
+        }
+
+        if (token is JArray array)
+        {
+            foreach (var item in array)
+            {
+                NormalizeReferenceFields(item);
+            }
+        }
+    }
+
+    private static bool TryGetReferenceId(JToken token, out JToken referenceId)
+    {
+        referenceId = default!;
+
+        if (token is not JObject obj)
+        {
+            return false;
+        }
+
+        var dataToken = obj["data"];
+        if (dataToken is not JObject dataObject)
+        {
+            return false;
+        }
+
+        var idToken = dataObject["id"];
+        if (idToken == null || idToken.Type == JTokenType.Null)
+        {
+            return false;
+        }
+
+        referenceId = idToken.DeepClone();
+        return true;
     }
 
     private static string RestoreBase64ImagesInHtml(string currentHtml, string originalHtml)
