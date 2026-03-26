@@ -10,10 +10,13 @@ public static class JObjectExtensions
     public static List<DocumentResponse> ToContentListResponse(this List<JObject> jObjects, string contentTypeId)
     {
         var result = new List<DocumentResponse>();
-        foreach (var jObject in jObjects)
+
+        foreach (var rootObject in jObjects)
         {
-            var contentResponse = jObject.ToContentResponse(contentTypeId);
-            result.Add(contentResponse);
+            foreach (var contentObject in ExtractContentObjects(rootObject))
+            {
+                result.Add(ParseContentObject(contentObject, contentTypeId));
+            }
         }
 
         return result;
@@ -21,106 +24,165 @@ public static class JObjectExtensions
 
     public static DocumentResponse ToContentResponse(this JObject jObject, string contentTypeId)
     {
-        return ParseContentObject(jObject, contentTypeId);
+        var contentObject = ExtractSingleContentObject(jObject);
+        return ParseContentObject(contentObject, contentTypeId);
     }
 
-    public static DocumentWithLocalizationsResponse ToContentWithLocalizationsResponse(this JObject jObject, string contentTypeId)
-    {
-        var documentResponse = ParseContentObject(jObject, contentTypeId);
-        var result = new DocumentWithLocalizationsResponse(documentResponse);
-        
-        JObject contentObject = jObject;
-        if (jObject["data"] != null && jObject["data"]!.Type == JTokenType.Object)
-        {
-            contentObject = jObject["data"] as JObject ?? throw new Exception("Failed to parse content data from response.");
-        }
-        
-        if (contentObject == null)
-        {
-            throw new PluginApplicationException("Failed to find content data in response.");
-        }
-        
-        var localizationsToken = GetCaseInsensitiveValue(contentObject, "localizations");
-        if (localizationsToken == null)
-        {
-            throw new PluginApplicationException(
-                "Localizations property not found. Please verify your Strapi version - by default this action assumes v5, but you might be using v4.");
-        }
-        
-        if (localizationsToken.Type == JTokenType.Array)
-        {
-            var localizationsArray = localizationsToken as JArray;
-            if (localizationsArray != null)
-            {
-                foreach (var item in localizationsArray)
-                {
-                    if (item.Type == JTokenType.Object)
-                    {
-                        var localization = ParseContentObject((item as JObject)!, contentTypeId);
-                        result.Localizations.Add(localization);
-                    }
-                }
-            }
-        }
-        
-        return result;
-    }
-    
     public static DocumentResponse ToFullContentResponse(this JObject jObject, string contentTypeId)
     {
-        if (jObject["data"] != null)
+        var contentObject = ExtractSingleContentObject(jObject);
+        return ParseContentObject(contentObject, contentTypeId);
+    }
+
+    public static DocumentWithLocalizationsResponse ToContentWithLocalizationsResponse(this JObject jObject,
+        string contentTypeId)
+    {
+        var contentObject = ExtractSingleContentObject(jObject);
+        var documentResponse = ParseContentObject(contentObject, contentTypeId);
+        var result = new DocumentWithLocalizationsResponse(documentResponse);
+
+        var localizationsToken = GetLocalizationsToken(contentObject);
+
+        if (localizationsToken == null)
         {
-            var dataObject = jObject["data"] as JObject;
-            if (dataObject != null)
+            return result;
+        }
+
+        foreach (var localizationObject in ExtractContentObjectsFromToken(localizationsToken))
+        {
+            result.Localizations.Add(ParseContentObject(localizationObject, contentTypeId));
+        }
+
+        return result;
+    }
+
+    private static List<JObject> ExtractContentObjects(JObject rootObject)
+    {
+        if (rootObject == null)
+        {
+            return [];
+        }
+
+        if (rootObject["data"] is JArray dataArray)
+        {
+            return dataArray.OfType<JObject>().ToList();
+        }
+
+        if (rootObject["data"] is JObject dataObject)
+        {
+            return [dataObject];
+        }
+
+        return [rootObject];
+    }
+
+    private static JObject ExtractSingleContentObject(JObject rootObject)
+    {
+        if (rootObject["data"] is JObject dataObject)
+        {
+            return dataObject;
+        }
+
+        if (rootObject["data"] is JArray dataArray)
+        {
+            var firstObject = dataArray.OfType<JObject>().FirstOrDefault();
+            if (firstObject != null)
             {
-                return dataObject.ToContentResponse(contentTypeId);
+                return firstObject;
+            }
+
+            throw new PluginApplicationException("Response contains an empty data array.");
+        }
+
+        return rootObject;
+    }
+
+    private static IEnumerable<JObject> ExtractContentObjectsFromToken(JToken token)
+    {
+        if (token is JArray array)
+        {
+            return array.OfType<JObject>();
+        }
+
+        if (token is JObject obj)
+        {
+            if (obj["data"] is JArray nestedDataArray)
+            {
+                return nestedDataArray.OfType<JObject>();
+            }
+
+            if (obj["data"] is JObject nestedDataObject)
+            {
+                return [nestedDataObject];
+            }
+
+            return [obj];
+        }
+
+        return Enumerable.Empty<JObject>();
+    }
+
+    private static JToken? GetLocalizationsToken(JObject contentObject)
+    {
+        // Strapi v4: localizations usually lives in attributes.localizations
+        if (contentObject["attributes"] is JObject attributes)
+        {
+            var localizations = GetCaseInsensitiveValue(attributes, "localizations");
+            if (localizations != null)
+            {
+                return localizations;
             }
         }
 
-        return jObject.ToContentResponse(contentTypeId);
+        // Strapi v5 / flat variants
+        return GetCaseInsensitiveValue(contentObject, "localizations");
     }
-    
+
     private static DocumentResponse ParseContentObject(JObject contentObject, string contentTypeId)
     {
-        var response = new DocumentResponse();
-        if (contentObject["attributes"] != null && contentObject["attributes"]!.Type == JTokenType.Object)
+        var response = new DocumentResponse
         {
-            response.Id = contentObject["id"]?.ToString();
-            var attributesObj = contentObject["attributes"] as JObject;
+            ContentTypeId = contentTypeId
+        };
 
-            if (attributesObj == null)
-            {
-                return response;
-            }
-
-            response.Id = GetCaseInsensitiveValue(attributesObj, "documentId")?.ToString() ?? response.Id;
-
-            response.Title = GetCaseInsensitiveValue(attributesObj, "name")?.ToString() ??
-                           GetCaseInsensitiveValue(attributesObj, "title")?.ToString();
-
-            response.CreatedAt = ParseDateTime(GetCaseInsensitiveValue(attributesObj, "createdAt")) ?? DateTime.MinValue;
-            response.UpdatedAt = ParseDateTime(GetCaseInsensitiveValue(attributesObj, "updatedAt")) ?? DateTime.MinValue;
-            response.PublishedAt = ParseDateTime(GetCaseInsensitiveValue(attributesObj, "publishedAt"));
-            response.Locale = GetCaseInsensitiveValue(attributesObj, "locale")?.ToString();
-        }
-        else
+        // Strapi v4 style: { id, attributes: { ... } }
+        if (contentObject["attributes"] is JObject attributesObj)
         {
             response.Id = GetCaseInsensitiveValue(contentObject, "id")?.ToString();
-            response.Id = GetCaseInsensitiveValue(contentObject, "documentId")?.ToString() ?? response.Id;
+            response.Id = GetCaseInsensitiveValue(attributesObj, "documentId")?.ToString() ?? response.Id;
 
-            response.Title = GetCaseInsensitiveValue(contentObject, "name")?.ToString() ??
-                           GetCaseInsensitiveValue(contentObject, "title")?.ToString();
+            response.Title =
+                GetCaseInsensitiveValue(attributesObj, "name")?.ToString() ??
+                GetCaseInsensitiveValue(attributesObj, "title")?.ToString() ??
+                GetCaseInsensitiveValue(attributesObj, "symbol")?.ToString();
 
-            response.CreatedAt = ParseDateTime(GetCaseInsensitiveValue(contentObject, "createdAt")) ?? DateTime.MinValue;
-            response.UpdatedAt = ParseDateTime(GetCaseInsensitiveValue(contentObject, "updatedAt")) ?? DateTime.MinValue;
-            response.PublishedAt = ParseDateTime(GetCaseInsensitiveValue(contentObject, "publishedAt"));
-            response.Locale = GetCaseInsensitiveValue(contentObject, "locale")?.ToString();
+            response.CreatedAt =
+                ParseDateTime(GetCaseInsensitiveValue(attributesObj, "createdAt")) ?? DateTime.MinValue;
+            response.UpdatedAt =
+                ParseDateTime(GetCaseInsensitiveValue(attributesObj, "updatedAt")) ?? DateTime.MinValue;
+            response.PublishedAt = ParseDateTime(GetCaseInsensitiveValue(attributesObj, "publishedAt"));
+            response.Locale = GetCaseInsensitiveValue(attributesObj, "locale")?.ToString();
+
+            return response;
         }
-        
-        response.ContentTypeId = contentTypeId;
+
+        // Strapi v5 style / flat object
+        response.Id = GetCaseInsensitiveValue(contentObject, "id")?.ToString();
+        response.Id = GetCaseInsensitiveValue(contentObject, "documentId")?.ToString() ?? response.Id;
+
+        response.Title =
+            GetCaseInsensitiveValue(contentObject, "name")?.ToString() ??
+            GetCaseInsensitiveValue(contentObject, "title")?.ToString() ??
+            GetCaseInsensitiveValue(contentObject, "symbol")?.ToString();
+
+        response.CreatedAt = ParseDateTime(GetCaseInsensitiveValue(contentObject, "createdAt")) ?? DateTime.MinValue;
+        response.UpdatedAt = ParseDateTime(GetCaseInsensitiveValue(contentObject, "updatedAt")) ?? DateTime.MinValue;
+        response.PublishedAt = ParseDateTime(GetCaseInsensitiveValue(contentObject, "publishedAt"));
+        response.Locale = GetCaseInsensitiveValue(contentObject, "locale")?.ToString();
+
         return response;
     }
-    
+
     private static JToken? GetCaseInsensitiveValue(JObject jObject, string propertyName)
     {
         if (jObject == null)
@@ -132,7 +194,7 @@ public static class JObjectExtensions
         {
             return jObject[propertyName];
         }
-        
+
         foreach (var property in jObject.Properties())
         {
             if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
@@ -140,10 +202,10 @@ public static class JObjectExtensions
                 return property.Value;
             }
         }
-        
+
         return null;
     }
-    
+
     private static DateTime? ParseDateTime(JToken? token)
     {
         if (token == null)
@@ -151,11 +213,11 @@ public static class JObjectExtensions
             return null;
         }
 
-        if (DateTime.TryParse(token.ToString(), out DateTime result))
+        if (DateTime.TryParse(token.ToString(), out var result))
         {
             return result;
         }
-        
+
         return null;
     }
 }
