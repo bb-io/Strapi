@@ -105,6 +105,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         ExceptionExtensions.ThrowIfNullOrEmpty(request.FieldPath, "Field path");
 
         var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
+        apiRequest.AddQueryParameter("populate", "*");
         var response = await Client.ExecuteWithErrorHandling(apiRequest);
         var content = response.Content;
         if (content == null)
@@ -113,7 +114,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
 
         var jObject = JObject.Parse(content);
-        var value = jObject.SelectToken(request.FieldPath)?.ToString() ?? string.Empty;
+        var value = GetTokenValue(jObject.SelectToken(request.FieldPath));
         return new StringResponse(value);
     }
 
@@ -326,6 +327,18 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var property = jObject.Properties()
             .FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
         return property?.Value;
+    }
+
+    private static string GetTokenValue(JToken? token)
+    {
+        if (token == null || token.Type is JTokenType.Null or JTokenType.Undefined)
+        {
+            return string.Empty;
+        }
+
+        return token.Type is JTokenType.Array or JTokenType.Object
+            ? token.ToString(Formatting.None)
+            : token.ToString();
     }
     
     private async Task<DocumentResponse> LocalizeV4Async(string endpoint, string jsonContent, string contentTypeId)
