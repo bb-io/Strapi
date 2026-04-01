@@ -226,6 +226,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
         
         var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString, strapiVersion, request.Locale);
+        var warnings = HtmlContentWarningDetector.Analyze(htmlString, jsonContent, strapiVersion);
 
         var endpoint = $"/api/{metadata.ContentTypeId}";
         if (!string.IsNullOrEmpty(metadata.ContentId))
@@ -265,7 +266,8 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             CreatedAt = result.CreatedAt,
             UpdatedAt = result.UpdatedAt,
             PublishedAt = result.PublishedAt,
-            Locale = result.Locale
+            Locale = result.Locale,
+            Warnings = warnings
         };
         
         if (isXliff && transformation != null)

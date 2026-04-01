@@ -27,5 +27,8 @@ public class UploadContentResponse
     [Display("Language")]
     public string? Locale { get; set; }
 
+    [Display("Warnings")]
+    public List<string> Warnings { get; set; } = [];
+
     public FileReference Content { get; set; } = new();
 }
