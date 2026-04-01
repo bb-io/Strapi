@@ -1,3 +1,4 @@
+using Apps.Strapi.Api;
 using Apps.Strapi.Constants;
 using Apps.Strapi.Models.Dtos;
 using Apps.Strapi.Models.Identifiers;
@@ -225,6 +226,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
         
         var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString, strapiVersion, request.Locale);
+        var warnings = HtmlContentWarningDetector.Analyze(htmlString, jsonContent, strapiVersion);
 
         var endpoint = $"/api/{metadata.ContentTypeId}";
         if (!string.IsNullOrEmpty(metadata.ContentId))
@@ -264,7 +266,8 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             CreatedAt = result.CreatedAt,
             UpdatedAt = result.UpdatedAt,
             PublishedAt = result.PublishedAt,
-            Locale = result.Locale
+            Locale = result.Locale,
+            Warnings = warnings
         };
         
         if (isXliff && transformation != null)
@@ -418,14 +421,15 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         try
         {
-            var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}")
-                .AddQueryParameter("populate", "localizations");
-            var response = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+            var apiRequest = CreateLocalizationRequest(request.ContentTypeId, request.ContentId);
+            var response = await Client.ExecuteLocalizationRequestWithErrorHandling<JObject>(apiRequest);
             return response.ToContentWithLocalizationsResponse(request.ContentTypeId);
         }
         catch (Exception ex)
         {
-            throw new PluginApplicationException($"Error: {ex.Message}. If you're using Strapi v4, specify this in the 'Strapi version' field", ex);
+            throw new PluginApplicationException(
+                $"Error retrieving localization objects: {StrapiClient.GetExceptionSummary(ex)}. If you're using Strapi v4, specify this in the 'Strapi version' field",
+                ex);
         }
     }
 
@@ -433,14 +437,14 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         try
         {
-            var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}")
-                .AddQueryParameter("populate", "localizations");
-
-            return await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
+            var apiRequest = CreateLocalizationRequest(identifier.ContentTypeId, identifier.ContentId);
+            return await Client.ExecuteLocalizationRequestWithErrorHandling<JObject>(apiRequest);
         }
         catch (Exception ex)
         {
-            throw new PluginApplicationException("Failed to retrieve localization objects through the REST API. Please verify that the content type ID is correct and localization is enabled for this content.", ex);
+            throw new PluginApplicationException(
+                $"Failed to retrieve localization objects through the REST API. Please verify that the content type ID is correct and localization is enabled for this content. Underlying error: {StrapiClient.GetExceptionSummary(ex)}",
+                ex);
         }
     }
 
@@ -448,5 +452,12 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         var apiRequest = new RestRequest("/api/i18n/locales");
         return await Client.ExecuteWithErrorHandling<List<LanguageDto>>(apiRequest);
+    }
+
+    private static RestRequest CreateLocalizationRequest(string contentTypeId, string contentId)
+    {
+        return new RestRequest($"/api/{contentTypeId}/{contentId}")
+            .AddQueryParameter("fields[0]", "locale")
+            .AddQueryParameter("populate[localizations][fields][0]", "locale");
     }
 }

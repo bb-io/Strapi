@@ -14,15 +14,20 @@ namespace Apps.Strapi.Api;
 
 public class StrapiClient : BlackBirdRestClient
 {
-    private readonly AsyncRetryPolicy _retryPolicy = Policy
-        .Handle<Exception>(x => x.Message.Contains("An error occurred while sending the request.") || x.Message.Contains("Rate limit exceeded") 
-            || x.Message.Contains("GatewayTimeout", StringComparison.InvariantCultureIgnoreCase) || x.Message.Contains("BadGateway", StringComparison.InvariantCultureIgnoreCase))
-        .WaitAndRetryAsync(4, (i) => TimeSpan.FromSeconds(Math.Pow(2, i)));
+    private static readonly TimeSpan LocalizationRequestTimeout = TimeSpan.FromMinutes(4);
+
+    private readonly AsyncRetryPolicy _retryPolicy = CreateRetryPolicy(IsTransientException, 4, i => TimeSpan.FromSeconds(Math.Pow(2, i)));
+
+    private readonly AsyncRetryPolicy _localizationRetryPolicy = CreateRetryPolicy(
+        IsLocalizationTransientException,
+        1,
+        _ => TimeSpan.FromSeconds(10));
     
     public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> credentialsProviders) : base(new()
     {
         BaseUrl = new(credentialsProviders.Get(CredNames.BaseUrl).Value.Trim('/')),
-        ThrowOnAnyError = false
+        ThrowOnAnyError = false,
+        MaxTimeout = (int)LocalizationRequestTimeout.TotalMilliseconds
     })
     {
         var apiToken = credentialsProviders.Get(CredNames.ApiToken).Value;
@@ -75,6 +80,29 @@ public class StrapiClient : BlackBirdRestClient
         return _retryPolicy.ExecuteAsync(() => base.ExecuteWithErrorHandling(request));
     }
 
+    public Task<T> ExecuteLocalizationRequestWithErrorHandling<T>(RestRequest request)
+    {
+        request.Timeout = (int)LocalizationRequestTimeout.TotalMilliseconds;
+        return _localizationRetryPolicy.ExecuteAsync(() => base.ExecuteWithErrorHandling<T>(request));
+    }
+
+    public static string GetExceptionSummary(Exception exception)
+    {
+        var messages = new List<string>();
+
+        for (var current = exception; current != null; current = current.InnerException)
+        {
+            if (string.IsNullOrWhiteSpace(current.Message) || messages.Contains(current.Message))
+            {
+                continue;
+            }
+
+            messages.Add(current.Message);
+        }
+
+        return string.Join(" Inner error: ", messages);
+    }
+
     protected override Exception ConfigureErrorException(RestResponse response)
     {
         if(string.IsNullOrEmpty(response.Content))
@@ -117,5 +145,46 @@ public class StrapiClient : BlackBirdRestClient
         {
             return new PluginApplicationException($"Status code: {response.StatusCode}, content: {response.Content}");
         }
+    }
+
+    private static AsyncRetryPolicy CreateRetryPolicy(
+        Func<Exception, bool> shouldRetry,
+        int retryCount,
+        Func<int, TimeSpan> sleepDurationProvider)
+    {
+        return Policy
+            .Handle<Exception>(shouldRetry)
+            .WaitAndRetryAsync(retryCount, sleepDurationProvider);
+    }
+
+    private static bool IsTransientException(Exception exception)
+    {
+        return HasMessage(exception, "An error occurred while sending the request.")
+               || HasMessage(exception, "Rate limit exceeded")
+               || HasMessage(exception, "GatewayTimeout")
+               || HasMessage(exception, "BadGateway")
+               || HasMessage(exception, "ServiceUnavailable");
+    }
+
+    private static bool IsLocalizationTransientException(Exception exception)
+    {
+        return IsTransientException(exception)
+               || HasMessage(exception, "timed out")
+               || HasMessage(exception, "timeout")
+               || HasMessage(exception, "operation was canceled")
+               || HasMessage(exception, "operation was cancelled");
+    }
+
+    private static bool HasMessage(Exception exception, string value)
+    {
+        for (var current = exception; current != null; current = current.InnerException)
+        {
+            if (current.Message.Contains(value, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
