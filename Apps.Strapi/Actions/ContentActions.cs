@@ -27,7 +27,7 @@ namespace Apps.Strapi.Actions;
 [ActionList("Content")]
 public class ContentActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : Invocable(invocationContext)
 {
-    [Action("Search something", Description = "Returns a list of content based on specified inputs. Only for collection types content types.")]
+    [Action("Search content", Description = "Returns a list of content based on specified inputs. Only for collection types content types.")]
     [BlueprintActionDefinition(BlueprintAction.SearchContent)]
     public async Task<SearchContentResponse> SearchContentAsync([ActionParameter] SearchContentRequest request)
     {
@@ -63,7 +63,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         return new(allDocuments);
     }
 
-    [Action("Get missing localization languages", Description = "Returns .")]
+    [Action("Get missing localization languages", Description = "Returns a list of languages that haven't been localized yet for the specified content.")]
     public async Task<MissingLocalesResponse> GetMissingLocalesAsync([ActionParameter] GetMissingLocalesRequest request)
     {
         ExceptionExtensions.ThrowIfNullOrEmpty(request.ContentTypeId, "Content type ID");
