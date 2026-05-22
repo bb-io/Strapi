@@ -80,18 +80,13 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         }
         else
         {
-            var content = await GetLocalizationObjectsV5Async(request);
-            if (content.Localizations == null || content.Localizations.Count == 0)
+            var documents = await GetLocalizationObjectsV5Async(request);
+            if (documents.Count == 0)
             {
                 return new MissingLocalesResponse(targetLocales, new List<string>());
             }
 
-            var locales = content.Localizations.Select(l => l.Locale).ToList();
-            if (!string.IsNullOrEmpty(content.Locale))
-            {
-                locales.Add(content.Locale);
-            }
-
+            var locales = documents.Select(l => l.Locale).ToList();
             var missingLocales = MissingLocalesResponse.GetMissingLocales(locales!, targetLocales);
             return new MissingLocalesResponse(missingLocales, locales!);
         }
@@ -417,13 +412,18 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         return JsonConvert.SerializeObject(payload);
     }
 
-    private async Task<DocumentWithLocalizationsResponse> GetLocalizationObjectsV5Async(GetMissingLocalesRequest request)
+    private async Task<List<DocumentWithLanguageDto>> GetLocalizationObjectsV5Async(GetMissingLocalesRequest request)
     {
         try
         {
-            var apiRequest = CreateLocalizationRequest(request.ContentTypeId, request.ContentId);
-            var response = await Client.ExecuteLocalizationRequestWithErrorHandling<JObject>(apiRequest);
-            return response.ToContentWithLocalizationsResponse(request.ContentTypeId);
+            var apiRequest = new RestRequest($"/api/{request.ContentTypeId}")
+                .AddQueryParameter("filters[documentId][$eq]", request.ContentId)
+                .AddQueryParameter("fields[0]", "locale")
+                .AddQueryParameter("fields[1]", "documentId")
+                .AddQueryParameter("locale", "*");
+                
+            var response = await Client.ExecuteWithErrorHandling<PaginationDto<DocumentWithLanguageDto>>(apiRequest);
+            return response.Data;
         }
         catch (Exception ex)
         {
