@@ -469,24 +469,35 @@ public static class HtmlToJsonConverter
         referenceId = default!;
 
         if (token is not JObject obj)
-        {
             return false;
-        }
 
+        // v4-style: { "data": { "id": 7, ... } }
         var dataToken = obj["data"];
-        if (dataToken is not JObject dataObject)
+        if (dataToken is JObject dataObject)
         {
-            return false;
+            var v4Id = dataObject["id"];
+            if (v4Id != null && v4Id.Type != JTokenType.Null)
+            {
+                referenceId = v4Id.DeepClone();
+                return true;
+            }
         }
 
-        var idToken = dataObject["id"];
-        if (idToken == null || idToken.Type == JTokenType.Null)
+        // v5-style direct embed: { "id": 2401, "documentId": "...", ... }
+        // Objects that have both an integer "id" and a non-empty "documentId" are Strapi
+        // document references (relations/media). Components have "id" but not "documentId".
+        var directId = obj["id"];
+        var documentIdToken = obj["documentId"];
+        if (directId != null && directId.Type == JTokenType.Integer &&
+            documentIdToken is JValue docIdValue &&
+            docIdValue.Type == JTokenType.String &&
+            !string.IsNullOrEmpty(docIdValue.ToString()))
         {
-            return false;
+            referenceId = directId.DeepClone();
+            return true;
         }
 
-        referenceId = idToken.DeepClone();
-        return true;
+        return false;
     }
 
     private static string RestoreBase64ImagesInHtml(string currentHtml, string originalHtml)
