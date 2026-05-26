@@ -9,7 +9,7 @@ public class SearchLanguageDataHandler(InvocationContext invocationContext) : In
 {
     public async Task<IEnumerable<DataSourceItem>> GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
     {
-        var apiRequest = new RestRequest("/api/i18n/locales");
+        var apiRequest = new RestRequest("/i18n/locales");
         var languages = await Client.ExecuteWithErrorHandling<List<LanguageDto>>(apiRequest);
         var dataSourceItems = languages
             .Where(x => context.SearchString == null ||

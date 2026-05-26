@@ -23,7 +23,7 @@ public class ExcludeFieldsDataHandler(InvocationContext invocationContext, [Acti
             throw new Exception("You must provide a Content ID first to fetch the fields");
         }
 
-        var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
+        var apiRequest = new RestRequest($"/{identifier.ContentTypeId}/{identifier.ContentId}");
         var result = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
 
         return GetStringPropertiesRecursively(result)
