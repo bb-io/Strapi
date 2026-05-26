@@ -40,7 +40,11 @@ public static class JsonToHtmlConverter
         
         var dataObj = jsonObj["data"] as JObject;
 
-        if (dataObj == null)
+        if (dataObj == null && jsonObj["id"] != null) // Handle case where 'data' is not present and root is the content object (v4 without wrapping)
+        {
+            dataObj = jsonObj;
+        }
+        else
         {
             ExceptionExtensions.ThrowIfNullOrEmpty(metadata.ContentId, "Content ID");
             throw new ArgumentException("Invalid JSON structure. Expected 'data' property.");

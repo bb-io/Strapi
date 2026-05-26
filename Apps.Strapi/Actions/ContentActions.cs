@@ -139,9 +139,13 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var responseJson = JObject.Parse(response.Content!);
         var dataObj = responseJson["data"] as JObject;
         
-        if (dataObj == null)
+        if(dataObj == null && responseJson["id"] != null)
         {
-            throw new PluginMisconfigurationException("Invalid response structure. Expected 'data' property.");
+            dataObj = responseJson;
+        }
+        else
+        {
+            throw new PluginMisconfigurationException("Unexpected response format. 'data' object not found and root object does not contain 'id'.");
         }
         
         var contentObj = dataObj["attributes"] as JObject ?? dataObj;
