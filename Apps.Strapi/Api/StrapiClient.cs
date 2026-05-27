@@ -1,6 +1,7 @@
 using System.Net;
 using Apps.Strapi.Constants;
 using Apps.Strapi.Models.Dtos;
+using Apps.Strapi.Utils;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
@@ -25,7 +26,7 @@ public class StrapiClient : BlackBirdRestClient
     
     public StrapiClient(IEnumerable<AuthenticationCredentialsProvider> credentialsProviders) : base(new()
     {
-        BaseUrl = new(credentialsProviders.Get(CredNames.BaseUrl).Value.Trim('/')),
+        BaseUrl = new(credentialsProviders.GetUrl()),
         ThrowOnAnyError = false,
         MaxTimeout = (int)LocalizationRequestTimeout.TotalMilliseconds
     })
@@ -113,6 +114,12 @@ public class StrapiClient : BlackBirdRestClient
             }
             
             return new PluginApplicationException($"Couldn't reach the server. {response.ErrorMessage}");
+        }
+
+        if (response.ResponseUri != null && response.ResponseUri.ToString().Contains("/i18n/locales"))
+        {
+            throw new PluginMisconfigurationException($"It seems like your system is not configured to use '/i18n/locales' endpoint. " +
+                                                      $"Please verify that your Strapi instance has the Internationalization (i18n) plugin installed and configured correctly. Status code: {response.StatusCode}");
         }
         
         if(response.StatusCode == HttpStatusCode.MethodNotAllowed && response.ContentType == "text/plain")

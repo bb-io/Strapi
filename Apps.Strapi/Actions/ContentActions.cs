@@ -34,7 +34,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var allDocuments = new List<DocumentResponse>();
         foreach (var contentTypeId in request.ContentTypeIds)
         {
-            var apiRequest = new RestRequest($"/api/{contentTypeId}");
+            var apiRequest = new RestRequest($"/{contentTypeId}");
             if (request.Language != null)
             {
                 apiRequest.AddQueryParameter("locale", request.Language);
@@ -100,7 +100,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentId, "Content ID");
         ExceptionExtensions.ThrowIfNullOrEmpty(request.FieldPath, "Field path");
 
-        var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
+        var apiRequest = new RestRequest($"/{identifier.ContentTypeId}/{identifier.ContentId}");
         apiRequest.AddQueryParameter("populate", "*");
         var response = await Client.ExecuteWithErrorHandling(apiRequest);
         var content = response.Content;
@@ -122,7 +122,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         ExceptionExtensions.ThrowIfNullOrEmpty(identifier.ContentTypeId, "Content type ID");
 
-        var request = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}");
+        var request = new RestRequest($"/{identifier.ContentTypeId}/{identifier.ContentId}");
         if (identifier.Language != null)
         {
             request.AddQueryParameter("locale", identifier.Language);
@@ -139,9 +139,16 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var responseJson = JObject.Parse(response.Content!);
         var dataObj = responseJson["data"] as JObject;
         
-        if (dataObj == null)
+        if(dataObj == null)
         {
-            throw new PluginMisconfigurationException("Invalid response structure. Expected 'data' property.");
+            if(responseJson["id"] != null)
+            {
+                dataObj = responseJson;
+            }
+            else
+            {
+                throw new PluginApplicationException("Unexpected response format. 'data' object not found and root object does not contain 'id'.");
+            }
         }
         
         var contentObj = dataObj["attributes"] as JObject ?? dataObj;
@@ -223,7 +230,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
         var jsonContent = HtmlToJsonConverter.ConvertToJson(htmlString, strapiVersion, request.Locale);
         var warnings = HtmlContentWarningDetector.Analyze(htmlString, jsonContent, strapiVersion);
 
-        var endpoint = $"/api/{metadata.ContentTypeId}";
+        var endpoint = $"/{metadata.ContentTypeId}";
         if (!string.IsNullOrEmpty(metadata.ContentId))
         {
             endpoint += $"/{metadata.ContentId}";
@@ -301,7 +308,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
             dataDictionary[fieldName] = fieldValue;
         }
 
-        var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}/{identifier.ContentId}", Method.Put)
+        var apiRequest = new RestRequest($"/{identifier.ContentTypeId}/{identifier.ContentId}", Method.Put)
             .AddJsonBody(new { data = dataDictionary });
 
         var response = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
@@ -311,7 +318,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     [Action("Delete content", Description = "Deletes a content by ID.")]
     public async Task DeleteContentAsync([ActionParameter] ContentIdentifier request)
     {
-        var apiRequest = new RestRequest($"/api/{request.ContentTypeId}/{request.ContentId}", Method.Delete);
+        var apiRequest = new RestRequest($"/{request.ContentTypeId}/{request.ContentId}", Method.Delete);
         await Client.ExecuteWithErrorHandling(apiRequest);
     }
     
@@ -389,7 +396,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     private async Task<DocumentResponse> UpdateV4LocalizationAsync(string contentTypeId, string contentId, string jsonContent)
     {
         var body = BuildV4UpdateRequestBody(jsonContent);
-        var apiRequest = new RestRequest($"/api/{contentTypeId}/{contentId}", Method.Put)
+        var apiRequest = new RestRequest($"/{contentTypeId}/{contentId}", Method.Put)
             .AddStringBody(body, ContentType.Json);
 
         var jObject = await Client.ExecuteWithErrorHandling<JObject>(apiRequest);
@@ -416,7 +423,7 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
     {
         try
         {
-            var apiRequest = new RestRequest($"/api/{request.ContentTypeId}")
+            var apiRequest = new RestRequest($"/{request.ContentTypeId}")
                 .AddQueryParameter("filters[documentId][$eq]", request.ContentId)
                 .AddQueryParameter("fields[0]", "locale")
                 .AddQueryParameter("fields[1]", "documentId")
@@ -450,13 +457,13 @@ public class ContentActions(InvocationContext invocationContext, IFileManagement
 
     private async Task<List<LanguageDto>> GetAllAvailableLanguagesAsync()
     {
-        var apiRequest = new RestRequest("/api/i18n/locales");
+        var apiRequest = new RestRequest("/i18n/locales");
         return await Client.ExecuteWithErrorHandling<List<LanguageDto>>(apiRequest);
     }
 
     private static RestRequest CreateLocalizationRequest(string contentTypeId, string contentId)
     {
-        return new RestRequest($"/api/{contentTypeId}/{contentId}")
+        return new RestRequest($"/{contentTypeId}/{contentId}")
             .AddQueryParameter("fields[0]", "locale")
             .AddQueryParameter("populate[localizations][fields][0]", "locale");
     }

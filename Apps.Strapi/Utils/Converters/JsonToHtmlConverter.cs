@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System.Web;
 using Apps.Strapi.Constants;
 using Apps.Strapi.Models.Records;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Strapi.Utils.Converters;
 
@@ -39,11 +40,18 @@ public static class JsonToHtmlConverter
         JsonProperties.RemoveRoundTripIgnoredProperties(jsonObj);
         
         var dataObj = jsonObj["data"] as JObject;
-
-        if (dataObj == null)
+        
+        if(dataObj == null)
         {
-            ExceptionExtensions.ThrowIfNullOrEmpty(metadata.ContentId, "Content ID");
-            throw new ArgumentException("Invalid JSON structure. Expected 'data' property.");
+            if(jsonObj["id"] != null)
+            {
+                dataObj = jsonObj;
+            }
+            else
+            {
+                ExceptionExtensions.ThrowIfNullOrEmpty(metadata.ContentId, "Content ID");
+                throw new PluginApplicationException("Invalid JSON structure. Expected 'data' property.");
+            }
         }
 
         // Create a copy for 'original' attribute with placeholders instead of base64

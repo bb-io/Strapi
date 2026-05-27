@@ -1,8 +1,7 @@
+using System.Net;
 using Apps.Strapi.Api;
-using Apps.Strapi.Models.Dtos;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Connections;
-using Newtonsoft.Json;
 using RestSharp;
 
 namespace Apps.Strapi.Connections;
@@ -11,23 +10,16 @@ public class ConnectionValidator : IConnectionValidator
 {
     public async ValueTask<ConnectionValidationResponse> ValidateConnection(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, CancellationToken cancellationToken)
     {
-        try
+        var client = new StrapiClient(authenticationCredentialsProviders);
+        var response = await client.ExecuteAsync(new RestRequest("/i18n/locales"), cancellationToken);
+            
+        var isValid = response.StatusCode != HttpStatusCode.Unauthorized && response.StatusCode != HttpStatusCode.Forbidden
+                        && response.StatusCode != HttpStatusCode.NotFound && (int)response.StatusCode != 0;
+        
+        return new()
         {
-            var client = new StrapiClient(authenticationCredentialsProviders);
-            var result = await client.ExecuteWithErrorHandling(new RestRequest("/api/i18n/locales"));
-            return new()
-            {
-                IsValid = true,
-                Message = result.Content
-            };
-        }
-        catch (Exception ex)
-        {
-            return new()
-            {
-                IsValid = false,
-                Message = ex.Message
-            };
-        }
+            IsValid = isValid,
+            Message = isValid ? "Connection successful." : $"Connection failed with status code: {response.StatusCode} and message: {response.Content}"
+        };
     }
 }

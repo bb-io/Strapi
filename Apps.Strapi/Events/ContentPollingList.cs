@@ -86,7 +86,7 @@ public class ContentPollingList(InvocationContext invocationContext) : Invocable
 
     private RestRequest BuildBaseApiRequest(string contentTypeId, ContentFilters contentRequest)
     {
-        var apiRequest = new RestRequest($"/api/{contentTypeId}");
+        var apiRequest = new RestRequest($"/{contentTypeId}");
 
         if (contentRequest.Language != null)
         {

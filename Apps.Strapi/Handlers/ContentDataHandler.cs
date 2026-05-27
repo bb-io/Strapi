@@ -18,7 +18,7 @@ public class ContentDataHandler(InvocationContext invocationContext, [ActionPara
             throw new Exception("You must provide a Content type ID first to fetch the content IDs.");
         }
 
-        var apiRequest = new RestRequest($"/api/{identifier.ContentTypeId}");
+        var apiRequest = new RestRequest($"/{identifier.ContentTypeId}");
         var result = await Client.PaginateAsync<JObject>(apiRequest);
         var documents = result.ToContentListResponse(identifier.ContentTypeId);
 
